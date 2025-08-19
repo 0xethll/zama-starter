@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.28;
 
 import {FHE, externalEuint64, ebool, euint64} from "@fhevm/solidity/lib/FHE.sol";
 import {ConfidentialFungibleToken} from "openzeppelin-confidential-contracts/contracts/token/ConfidentialFungibleToken.sol";
@@ -20,7 +20,7 @@ contract FaucetToken is ConfidentialFungibleToken {
     ) ConfidentialFungibleToken(name, symbol, uri) {}
 
     function mint(address to, externalEuint64 amount, bytes memory inputProof) public {
-        euint64 max = FHE.asEuint256(MAX_MINT_AMOUNT);
+        euint64 max = FHE.asEuint64(MAX_MINT_AMOUNT);
 
         uint256 timeSinceLastMint = block.timestamp - lastMintTime[to];
         if (lastMintTime[to] != 0 && timeSinceLastMint < MINT_COOLDOWN) {

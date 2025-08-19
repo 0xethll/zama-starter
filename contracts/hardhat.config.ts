@@ -8,10 +8,10 @@ const config: HardhatUserConfig = {
   solidity: {
     profiles: {
       default: {
-        version: '0.8.24',
+        version: '0.8.28',
       },
       production: {
-        version: '0.8.24',
+        version: '0.8.28',
         settings: {
           optimizer: {
             enabled: true,
@@ -21,6 +21,19 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  // solidity: {
+  //   version: '0.8.24',
+  //   settings: {
+  //     metadata: {
+  //       bytecodeHash: 'none',
+  //     },
+  //     optimizer: {
+  //       enabled: true,
+  //       runs: 800,
+  //     },
+  //     evmVersion: 'cancun',
+  //   },
+  // },
   networks: {
     hardhatMainnet: {
       type: 'edr-simulated',
