@@ -3,13 +3,14 @@ pragma solidity ^0.8.28;
 
 import {FHE, externalEuint64, ebool, euint64} from "@fhevm/solidity/lib/FHE.sol";
 import {ConfidentialFungibleToken} from "openzeppelin-confidential-contracts/contracts/token/ConfidentialFungibleToken.sol";
+import {SepoliaConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
 
-contract FaucetToken is ConfidentialFungibleToken {
+contract FaucetToken is SepoliaConfig, ConfidentialFungibleToken {
     using FHE for *;
 
     error MintCooldownActive(uint256 timeRemaining);
 
-    uint256 public constant MINT_COOLDOWN = 24 hours;
+    uint256 public constant MINT_COOLDOWN = 2 minutes;
     uint64 public constant MAX_MINT_AMOUNT = 1000_000_000;
     mapping(address => uint256) public lastMintTime;
 

@@ -1,28 +1,7 @@
 // FHE utilities and configuration for Zama integration
 
-import {
-  initSDK,
-  createInstance,
-  SepoliaConfig,
-  FhevmInstance,
-} from '@zama-fhe/relayer-sdk/bundle'
-
-// // Type for Ethereum provider
-// interface EthereumProvider {
-//   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>
-//   on: (event: string, listener: (...args: unknown[]) => void) => void
-//   removeListener: (
-//     event: string,
-//     listener: (...args: unknown[]) => void,
-//   ) => void
-// }
-
-// // Type for window with ethereum
-// declare global {
-//   interface Window {
-//     ethereum?: EthereumProvider
-//   }
-// }
+// Import types only for server-side compatibility
+import type { FhevmInstance } from '@zama-fhe/relayer-sdk/bundle'
 
 // Type for signer (simplified ethers.Signer interface)
 interface Signer {
@@ -39,7 +18,17 @@ interface Signer {
  * Must be called before using any FHE functionality
  */
 export async function initializeFHE(): Promise<void> {
-  await initSDK()
+  if (typeof window === 'undefined') {
+    throw new Error('FHE SDK can only be used in the browser')
+  }
+
+  const fheSdk = await import('@zama-fhe/relayer-sdk/web')
+
+  if (!fheSdk.initSDK) {
+    throw new Error('initSDK function not available from FHE SDK')
+  }
+
+  await fheSdk.initSDK()
 }
 
 /**
@@ -51,12 +40,18 @@ export async function createFHEInstance(): Promise<FhevmInstance> {
     throw new Error('Ethereum provider not available')
   }
 
+  const fheSdk = await import('@zama-fhe/relayer-sdk/web')
+
+  if (!fheSdk.createInstance || !fheSdk.SepoliaConfig) {
+    throw new Error('Required FHE SDK functions not available')
+  }
+
   const config = {
-    ...SepoliaConfig,
+    ...fheSdk.SepoliaConfig,
     network: window.ethereum,
   }
 
-  return await createInstance(config)
+  return await fheSdk.createInstance(config)
 }
 
 /**
@@ -71,6 +66,7 @@ export async function encryptUint64(
   handle: Uint8Array<ArrayBufferLike>
   proof: Uint8Array<ArrayBufferLike>
 }> {
+  console.log(contractAddress, userAddress)
   const input = fheInstance.createEncryptedInput(contractAddress, userAddress)
   input.add64(value)
 

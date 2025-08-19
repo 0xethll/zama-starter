@@ -23,3 +23,5 @@ npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
 ## Deployed Addresses
 
 CounterModule#FaucetToken - 0xf19064B0673ffF053BCbB0aaB3f9E8Bd4c923ace
+
+CounterModule - 2 minutes claim period for tesing - 0x84b490df85214c40B01dEA0bf444c9C744cAdB94
