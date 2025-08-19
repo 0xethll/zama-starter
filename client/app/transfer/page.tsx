@@ -16,7 +16,7 @@ export default function TransferPage() {
       alert('Please connect your wallet first')
       return
     }
-    
+
     setIsLoading(true)
     try {
       // TODO: Implement FHE token transfer logic
@@ -48,12 +48,25 @@ export default function TransferPage() {
             <div className="flex items-start gap-3">
               <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">How FHE Transfers Work</h3>
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                  How FHE Transfers Work
+                </h3>
                 <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                  <li>• Your transfer amount is encrypted before being sent to the blockchain</li>
-                  <li>• The smart contract performs operations on encrypted data</li>
-                  <li>• No one can see the actual transfer amount, not even validators</li>
-                  <li>• Only the sender and recipient can decrypt their balance information</li>
+                  <li>
+                    • Your transfer amount is encrypted before being sent to the
+                    blockchain
+                  </li>
+                  <li>
+                    • The smart contract performs operations on encrypted data
+                  </li>
+                  <li>
+                    • No one can see the actual transfer amount, not even
+                    validators
+                  </li>
+                  <li>
+                    • Only the sender and recipient can decrypt their balance
+                    information
+                  </li>
                 </ul>
               </div>
             </div>
@@ -89,7 +102,8 @@ export default function TransferPage() {
                   <Shield className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  This amount will be encrypted and hidden from everyone except you and the recipient
+                  This amount will be encrypted and hidden from everyone except
+                  you and the recipient
                 </p>
               </div>
 
@@ -98,11 +112,19 @@ export default function TransferPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>From:</span>
-                    <span className="font-mono">{address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Not connected'}</span>
+                    <span className="font-mono">
+                      {address
+                        ? `${address.slice(0, 6)}...${address.slice(-4)}`
+                        : 'Not connected'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>To:</span>
-                    <span className="font-mono">{recipient ? `${recipient.slice(0, 6)}...${recipient.slice(-4)}` : 'Enter address'}</span>
+                    <span className="font-mono">
+                      {recipient
+                        ? `${recipient.slice(0, 6)}...${recipient.slice(-4)}`
+                        : 'Enter address'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Amount:</span>
@@ -128,14 +150,6 @@ export default function TransferPage() {
                 </p>
               )}
             </div>
-          </div>
-
-          <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <h4 className="font-semibold mb-2 text-yellow-900 dark:text-yellow-100">Note</h4>
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              This is a demonstration interface. The actual FHE token contracts need to be deployed on Sepolia testnet 
-              for full functionality. Currently showing UI/UX flow only.
-            </p>
           </div>
         </div>
       </main>
