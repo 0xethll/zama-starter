@@ -13,7 +13,7 @@ import { useAccount } from 'wagmi'
 import { Signer } from 'ethers'
 import { getEthersSigner } from '@/lib/client-to-signer'
 import { initializeFHE, createFHEInstance } from '@/lib/fhe'
-import { useConfidentialBalance } from '@/hooks/useFaucetContract'
+import { useConfidentialBalance } from '@/hooks/useTokenContract'
 import { useConfig } from 'wagmi'
 import type { FhevmInstance } from '@zama-fhe/relayer-sdk/bundle'
 
@@ -28,7 +28,7 @@ type StateChangeListener = () => void
 const stateChangeListeners = new Set<StateChangeListener>()
 
 const notifyStateChange = () => {
-  stateChangeListeners.forEach(listener => listener())
+  stateChangeListeners.forEach((listener) => listener())
 }
 
 /**
@@ -52,7 +52,9 @@ const initializeFHESingleton = async (): Promise<FhevmInstance> => {
 
       // Check if ethereum provider is available
       if (typeof window === 'undefined' || !window.ethereum) {
-        throw new Error('Ethereum provider not available. Please install MetaMask.')
+        throw new Error(
+          'Ethereum provider not available. Please install MetaMask.',
+        )
       }
 
       // Initialize SDK
@@ -67,7 +69,8 @@ const initializeFHESingleton = async (): Promise<FhevmInstance> => {
 
       return instance
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize FHE'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to initialize FHE'
       globalError = errorMessage
       globalInitPromise = null
       console.error('FHE initialization error:', err)
@@ -93,7 +96,7 @@ interface FHEContextType {
   encryptedBalance: `0x${string}` | undefined
   decryptedBalance: bigint | null
   isBalanceVisible: boolean
-  
+
   // Balance actions
   setDecryptedBalance: (balance: bigint | null) => void
   setIsBalanceVisible: (visible: boolean) => void

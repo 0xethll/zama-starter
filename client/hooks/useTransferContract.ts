@@ -10,6 +10,7 @@ import { CONTRACTS } from '@/lib/contracts'
 import { useFHEContext } from '@/contexts/FHEContext'
 import { encryptUint64 } from '@/lib/fhe'
 import { toHex, isAddress } from 'viem'
+import { useConfidentialBalance } from './useTokenContract'
 
 /**
  * Hook to transfer confidential tokens
@@ -17,6 +18,7 @@ import { toHex, isAddress } from 'viem'
 export function useTransferContract() {
   const { address, isConnected } = useAccount()
   const { isFHEReady, fheInstance } = useFHEContext()
+  const { refetch: refetchBalance } = useConfidentialBalance()
   const [isPreparingTx, setIsPreparingTx] = useState(false)
   const [isInitiating, setIsInitiating] = useState(false)
 
@@ -123,6 +125,13 @@ export function useTransferContract() {
       setIsPreparingTx(false)
     }
   }, [isWriting, isConfirmed, errorMessage])
+
+  // Refetch balance after successful transfer
+  useEffect(() => {
+    if (isConfirmed) {
+      refetchBalance()
+    }
+  }, [isConfirmed, refetchBalance])
 
   return {
     transfer,

@@ -11,6 +11,7 @@ import { CONTRACTS, MINT_AMOUNT } from '@/lib/contracts'
 import { useFHEContext } from '@/contexts/FHEContext'
 import { encryptUint64 } from '@/lib/fhe'
 import { toHex } from 'viem'
+import { useConfidentialBalance } from './useTokenContract'
 
 /**
  * Hook to read faucet contract data
@@ -84,6 +85,7 @@ export function useFaucetMint() {
   const { address, isConnected } = useAccount()
   const { isFHEReady, fheInstance } = useFHEContext()
   const { refetchLastMintTime } = useFaucetData()
+  const { refetch: refetchBalance } = useConfidentialBalance()
   const [isPreparingTx, setIsPreparingTx] = useState(false)
   const [isInitiating, setIsInitiating] = useState(false)
 
@@ -175,8 +177,9 @@ export function useFaucetMint() {
   useEffect(() => {
     if (isConfirmed) {
       refetchLastMintTime()
+      refetchBalance()
     }
-  }, [isConfirmed, refetchLastMintTime])
+  }, [isConfirmed, refetchLastMintTime, refetchBalance])
 
   // Reset initiating state when transaction starts or completes
   useEffect(() => {
@@ -206,24 +209,3 @@ export function useFaucetMint() {
   }
 }
 
-/**
- * Hook to get confidential balance (returns encrypted handle)
- */
-export function useConfidentialBalance() {
-  const { address } = useAccount()
-
-  const { data: encryptedBalance, refetch } = useReadContract({
-    address: CONTRACTS.FAUCET_TOKEN.address,
-    abi: CONTRACTS.FAUCET_TOKEN.abi,
-    functionName: 'confidentialBalanceOf',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address,
-    },
-  })
-
-  return {
-    encryptedBalance,
-    refetch,
-  }
-}
