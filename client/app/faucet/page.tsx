@@ -1,6 +1,7 @@
 'use client'
 
 import { Sidebar } from '@/components/sidebar'
+import { useState } from 'react'
 import { Coins, Shield, Info, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { useFaucetData, useFaucetMint } from '@/hooks/useFaucetContract'
@@ -12,7 +13,8 @@ export default function FaucetPage() {
   const { canClaim, timeUntilNextClaim, lastClaimDate } = useFaucetData()
   const { 
     mintFaucetTokens, 
-    isLoading: isMintLoading, 
+    isLoading: isMintLoading,
+    isInitiating,
     isConfirmed,
     error: mintError,
     canMint 
@@ -155,9 +157,10 @@ export default function FaucetPage() {
               <button
                 onClick={handleClaimTokens}
                 disabled={!isConnected || !canClaim || isMintLoading || !canMint}
-                className="w-full primary-bg text-white py-3 px-6 rounded-md font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full primary-bg text-white py-3 px-6 rounded-md font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${isInitiating ? 'scale-95' : ''}`}
               >
                 {isFHELoading ? 'Initializing FHE...' : 
+                 isInitiating ? 'Preparing Transaction...' :
                  isMintLoading ? 'Claiming...' : 
                  'Claim 1,000 Confidential Tokens'}
               </button>

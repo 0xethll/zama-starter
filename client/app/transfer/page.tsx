@@ -14,7 +14,8 @@ export default function TransferPage() {
   const { isReady: isFHEReady, isLoading: isFHELoading, error: fheError } = useFHEReady()
   const { 
     transfer, 
-    isLoading: isTransferLoading, 
+    isLoading: isTransferLoading,
+    isInitiating,
     isConfirmed,
     error: transferError,
     canTransfer,
@@ -141,9 +142,10 @@ export default function TransferPage() {
               <button
                 onClick={handleTransfer}
                 disabled={!isConnected || !recipient || !amount || isTransferLoading || !canTransfer}
-                className="w-full primary-bg text-white py-3 px-4 rounded-md font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full primary-bg text-white py-3 px-4 rounded-md font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${isInitiating ? 'scale-95' : ''}`}
               >
                 {isFHELoading ? 'Initializing FHE...' : 
+                 isInitiating ? 'Preparing Transaction...' :
                  isTransferLoading ? 'Processing Transfer...' : 
                  'Send Confidential Transfer'}
               </button>

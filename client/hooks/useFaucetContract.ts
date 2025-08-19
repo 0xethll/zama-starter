@@ -85,6 +85,7 @@ export function useFaucetMint() {
   const { isReady: isFHEReady, fheInstance } = useFHEReady()
   const { refetchLastMintTime } = useFaucetData()
   const [isPreparingTx, setIsPreparingTx] = useState(false)
+  const [isInitiating, setIsInitiating] = useState(false)
 
   // Contract write hook
   const {
@@ -105,24 +106,26 @@ export function useFaucetMint() {
   })
 
   const mintFaucetTokens = async () => {
-    if (!isConnected) {
-      throw new Error('Please connect your wallet first')
-    }
-
-    if (!address) {
-      throw new Error('No wallet address found')
-    }
-
-    if (!isFHEReady || !fheInstance) {
-      throw new Error(
-        'FHE system is not ready. Please wait for initialization.',
-      )
-    }
-
-    setIsPreparingTx(true)
-    resetWrite()
+    setIsInitiating(true)
 
     try {
+      if (!isConnected) {
+        throw new Error('Please connect your wallet first')
+      }
+
+      if (!address) {
+        throw new Error('No wallet address found')
+      }
+
+      if (!isFHEReady || !fheInstance) {
+        throw new Error(
+          'FHE system is not ready. Please wait for initialization.',
+        )
+      }
+
+      setIsPreparingTx(true)
+      resetWrite()
+
       // Encrypt the mint amount
       const { handle, proof } = await encryptUint64(
         fheInstance,
@@ -140,9 +143,9 @@ export function useFaucetMint() {
       })
     } catch (error) {
       console.error('Error preparing mint transaction:', error)
-      throw error
-    } finally {
+      setIsInitiating(false)
       setIsPreparingTx(false)
+      throw error
     }
   }
 
@@ -175,9 +178,18 @@ export function useFaucetMint() {
     }
   }, [isConfirmed, refetchLastMintTime])
 
+  // Reset initiating state when transaction starts or completes
+  useEffect(() => {
+    if (isWriting || isConfirmed || errorMessage) {
+      setIsInitiating(false)
+      setIsPreparingTx(false)
+    }
+  }, [isWriting, isConfirmed, errorMessage])
+
   return {
     mintFaucetTokens,
-    isLoading: isPreparingTx || isWriting || isConfirming,
+    isLoading: isInitiating || isPreparingTx || isWriting || isConfirming,
+    isInitiating,
     isPreparingTx,
     isWriting,
     isConfirming,
@@ -187,6 +199,7 @@ export function useFaucetMint() {
     canMint:
       isConnected &&
       isFHEReady &&
+      !isInitiating &&
       !isPreparingTx &&
       !isWriting &&
       !isConfirming,
