@@ -8,7 +8,7 @@ import {
   useWaitForTransactionReceipt,
 } from 'wagmi'
 import { CONTRACTS, MINT_AMOUNT } from '@/lib/contracts'
-import { useFHEReady } from './useFHE'
+import { useFHEContext } from '@/contexts/FHEContext'
 import { encryptUint64 } from '@/lib/fhe'
 import { toHex } from 'viem'
 
@@ -82,7 +82,7 @@ export function useFaucetData() {
  */
 export function useFaucetMint() {
   const { address, isConnected } = useAccount()
-  const { isReady: isFHEReady, fheInstance } = useFHEReady()
+  const { isFHEReady, fheInstance } = useFHEContext()
   const { refetchLastMintTime } = useFaucetData()
   const [isPreparingTx, setIsPreparingTx] = useState(false)
   const [isInitiating, setIsInitiating] = useState(false)

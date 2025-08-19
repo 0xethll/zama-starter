@@ -7,7 +7,7 @@ import {
   useWaitForTransactionReceipt,
 } from 'wagmi'
 import { CONTRACTS } from '@/lib/contracts'
-import { useFHEReady } from './useFHE'
+import { useFHEContext } from '@/contexts/FHEContext'
 import { encryptUint64 } from '@/lib/fhe'
 import { toHex, isAddress } from 'viem'
 
@@ -16,7 +16,7 @@ import { toHex, isAddress } from 'viem'
  */
 export function useTransferContract() {
   const { address, isConnected } = useAccount()
-  const { isReady: isFHEReady, fheInstance } = useFHEReady()
+  const { isFHEReady, fheInstance } = useFHEContext()
   const [isPreparingTx, setIsPreparingTx] = useState(false)
   const [isInitiating, setIsInitiating] = useState(false)
 

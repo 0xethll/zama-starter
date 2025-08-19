@@ -11,17 +11,17 @@ import {
 } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { useTransferContract } from '@/hooks/useTransferContract'
-import { useFHEReady } from '@/hooks/useFHE'
+import { useFHEContext } from '@/contexts/FHEContext'
 
 export default function TransferPage() {
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('')
   const { address, isConnected } = useAccount()
   const {
-    isReady: isFHEReady,
-    isLoading: isFHELoading,
-    error: fheError,
-  } = useFHEReady()
+    isFHEReady,
+    fheError,
+  } = useFHEContext()
+  const isFHELoading = !isFHEReady && !fheError
   const {
     transfer,
     isLoading: isTransferLoading,

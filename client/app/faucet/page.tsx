@@ -12,15 +12,15 @@ import {
 } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { useFaucetData, useFaucetMint } from '@/hooks/useFaucetContract'
-import { useFHEReady } from '@/hooks/useFHE'
+import { useFHEContext } from '@/contexts/FHEContext'
 
 export default function FaucetPage() {
   const { address, isConnected } = useAccount()
   const {
-    isReady: isFHEReady,
-    isLoading: isFHELoading,
-    error: fheError,
-  } = useFHEReady()
+    isFHEReady,
+    fheError,
+  } = useFHEContext()
+  const isFHELoading = !isFHEReady && !fheError
   const { canClaim, timeUntilNextClaim, lastClaimDate } = useFaucetData()
   const {
     mintFaucetTokens,

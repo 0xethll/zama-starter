@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { decryptForUser, formatTokenAmount } from '@/lib/fhe'
 import { CONTRACTS } from '@/lib/contracts'
@@ -9,21 +9,51 @@ import { cn } from '@/lib/utils'
 import { useFHEContext } from '@/contexts/FHEContext'
 
 export function TokenBalance() {
-  const { address } = useAccount()
+  const { address, connector } = useAccount()
   const { 
     isFHEReady, 
     fheInstance, 
+    fheError,
     signer, 
     encryptedBalance, 
     decryptedBalance,
     isBalanceVisible,
     setDecryptedBalance,
     setIsBalanceVisible,
-    progress 
   } = useFHEContext()
 
   const [isDecrypting, setIsDecrypting] = useState(false)
   const [decryptError, setDecryptError] = useState<string | null>(null)
+
+  // Calculate progress state locally (moved from FHEContext for performance)
+  const progress = useMemo(() => {
+    const steps = [
+      { key: 'wallet', label: 'Connect wallet', complete: !!address },
+      {
+        key: 'connector',
+        label: 'Initialize connector',
+        complete: !!connector,
+      },
+      {
+        key: 'fhe',
+        label: 'Load FHE system',
+        complete: isFHEReady && !!fheInstance,
+      },
+      { key: 'signer', label: 'Initialize signer', complete: !!signer },
+      { key: 'balance', label: 'Load balance', complete: !!encryptedBalance },
+    ]
+
+    const completedCount = steps.filter((step) => step.complete).length
+    const currentStep = steps.find((step) => !step.complete)
+
+    return {
+      steps,
+      completedCount,
+      totalCount: steps.length,
+      currentStep,
+      isComplete: completedCount === steps.length,
+    }
+  }, [address, connector, isFHEReady, fheInstance, signer, encryptedBalance])
 
   // Clear decrypt error when address changes
   useEffect(() => {

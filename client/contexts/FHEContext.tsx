@@ -6,19 +6,85 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  useRef,
+  useCallback,
 } from 'react'
 import { useAccount } from 'wagmi'
 import { Signer } from 'ethers'
 import { getEthersSigner } from '@/lib/client-to-signer'
-import { useFHEReady } from '@/hooks/useFHE'
+import { initializeFHE, createFHEInstance } from '@/lib/fhe'
 import { useConfidentialBalance } from '@/hooks/useFaucetContract'
 import { useConfig } from 'wagmi'
 import type { FhevmInstance } from '@zama-fhe/relayer-sdk/bundle'
+
+// Global singleton state to prevent multiple FHE initializations
+let globalFheInstance: FhevmInstance | null = null
+let globalIsInitialized = false
+let globalInitPromise: Promise<FhevmInstance> | null = null
+let globalError: string | null = null
+
+// Subscribers for state changes
+type StateChangeListener = () => void
+const stateChangeListeners = new Set<StateChangeListener>()
+
+const notifyStateChange = () => {
+  stateChangeListeners.forEach(listener => listener())
+}
+
+/**
+ * Initialize FHE singleton instance
+ */
+const initializeFHESingleton = async (): Promise<FhevmInstance> => {
+  // Return existing instance if already initialized
+  if (globalFheInstance && globalIsInitialized) {
+    return globalFheInstance
+  }
+
+  // Return existing promise if initialization is in progress
+  if (globalInitPromise) {
+    return globalInitPromise
+  }
+
+  // Start new initialization
+  globalInitPromise = (async () => {
+    try {
+      globalError = null
+
+      // Check if ethereum provider is available
+      if (typeof window === 'undefined' || !window.ethereum) {
+        throw new Error('Ethereum provider not available. Please install MetaMask.')
+      }
+
+      // Initialize SDK
+      await initializeFHE()
+
+      // Create instance
+      const instance = await createFHEInstance()
+
+      globalFheInstance = instance
+      globalIsInitialized = true
+      notifyStateChange()
+
+      return instance
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize FHE'
+      globalError = errorMessage
+      globalInitPromise = null
+      console.error('FHE initialization error:', err)
+      notifyStateChange()
+      throw err
+    }
+  })()
+
+  return globalInitPromise
+}
 
 interface FHEContextType {
   // FHE state
   isFHEReady: boolean
   fheInstance: FhevmInstance | null
+  fheError: string | null
+  retryFHE: () => void
 
   // Signer state
   signer: Signer | null
@@ -31,19 +97,6 @@ interface FHEContextType {
   // Balance actions
   setDecryptedBalance: (balance: bigint | null) => void
   setIsBalanceVisible: (visible: boolean) => void
-
-  // Progress tracking
-  progress: {
-    steps: Array<{
-      key: string
-      label: string
-      complete: boolean
-    }>
-    completedCount: number
-    totalCount: number
-    currentStep: { key: string; label: string; complete: boolean } | undefined
-    isComplete: boolean
-  }
 }
 
 const FHEContext = createContext<FHEContextType | null>(null)
@@ -55,12 +108,57 @@ interface FHEProviderProps {
 export function FHEProvider({ children }: FHEProviderProps) {
   const { address, connector, isConnected } = useAccount()
   const config = useConfig()
-  const { isReady: isFHEReady, fheInstance } = useFHEReady()
   const { encryptedBalance } = useConfidentialBalance()
 
   const [signer, setSigner] = useState<Signer | null>(null)
   const [decryptedBalance, setDecryptedBalance] = useState<bigint | null>(null)
   const [isBalanceVisible, setIsBalanceVisible] = useState(false)
+  const [fheError, setFheError] = useState<string | null>(globalError)
+  const isMountedRef = useRef(true)
+
+  // Update FHE error state when global state changes
+  const updateFHEState = useCallback(() => {
+    if (!isMountedRef.current) return
+    setFheError(globalError)
+  }, [])
+
+  // Initialize FHE with singleton pattern
+  useEffect(() => {
+    isMountedRef.current = true
+
+    // Subscribe to global FHE state changes
+    stateChangeListeners.add(updateFHEState)
+
+    // Initialize if not already done
+    if (!globalIsInitialized && !globalInitPromise && !globalError) {
+      initializeFHESingleton().catch(() => {
+        // Error already handled in initializeFHESingleton
+      })
+    } else {
+      updateFHEState()
+    }
+
+    return () => {
+      isMountedRef.current = false
+      stateChangeListeners.delete(updateFHEState)
+    }
+  }, [updateFHEState])
+
+  const retryFHE = useCallback(() => {
+    if (!isMountedRef.current) return
+
+    // Reset global state
+    globalFheInstance = null
+    globalIsInitialized = false
+    globalInitPromise = null
+    globalError = null
+
+    setFheError(null)
+
+    initializeFHESingleton().catch(() => {
+      // Error already handled in initializeFHESingleton
+    })
+  }, [])
 
   // Initialize signer when wallet is connected
   useEffect(() => {
@@ -101,46 +199,17 @@ export function FHEProvider({ children }: FHEProviderProps) {
     }
   }, [encryptedBalance])
 
-  // Calculate progress state
-  const progress = React.useMemo(() => {
-    const steps = [
-      { key: 'wallet', label: 'Connect wallet', complete: !!address },
-      {
-        key: 'connector',
-        label: 'Initialize connector',
-        complete: !!connector,
-      },
-      {
-        key: 'fhe',
-        label: 'Load FHE system',
-        complete: isFHEReady && !!fheInstance,
-      },
-      { key: 'signer', label: 'Initialize signer', complete: !!signer },
-      { key: 'balance', label: 'Load balance', complete: !!encryptedBalance },
-    ]
-
-    const completedCount = steps.filter((step) => step.complete).length
-    const currentStep = steps.find((step) => !step.complete)
-
-    return {
-      steps,
-      completedCount,
-      totalCount: steps.length,
-      currentStep,
-      isComplete: completedCount === steps.length,
-    }
-  }, [address, connector, isFHEReady, fheInstance, signer, encryptedBalance])
-
   const contextValue: FHEContextType = {
-    isFHEReady,
-    fheInstance,
+    isFHEReady: globalIsInitialized && !!globalFheInstance && !fheError,
+    fheInstance: globalFheInstance,
+    fheError,
+    retryFHE,
     signer,
     encryptedBalance,
     decryptedBalance,
     isBalanceVisible,
     setDecryptedBalance,
     setIsBalanceVisible,
-    progress,
   }
 
   return (
