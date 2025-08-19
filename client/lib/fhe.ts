@@ -58,7 +58,6 @@ export async function encryptUint64(
   handle: Uint8Array<ArrayBufferLike>
   proof: Uint8Array<ArrayBufferLike>
 }> {
-  console.log(contractAddress, userAddress)
   const input = fheInstance.createEncryptedInput(contractAddress, userAddress)
   input.add64(value)
 

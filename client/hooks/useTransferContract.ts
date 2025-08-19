@@ -38,7 +38,7 @@ export function useTransferContract() {
     hash: txHash,
   })
 
-  const transfer = async (recipient: string, amount: number) => {
+  const transfer = async (recipient: string, amount: number): Promise<void> => {
     setIsInitiating(true)
     
     try {

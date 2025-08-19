@@ -2,7 +2,13 @@
 
 import { Sidebar } from '@/components/sidebar'
 import { useState } from 'react'
-import { ArrowUpDown, Shield, Info, CheckCircle, AlertCircle } from 'lucide-react'
+import {
+  ArrowUpDown,
+  Shield,
+  Info,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { useTransferContract } from '@/hooks/useTransferContract'
 import { useFHEReady } from '@/hooks/useFHE'
@@ -11,15 +17,19 @@ export default function TransferPage() {
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('')
   const { address, isConnected } = useAccount()
-  const { isReady: isFHEReady, isLoading: isFHELoading, error: fheError } = useFHEReady()
-  const { 
-    transfer, 
+  const {
+    isReady: isFHEReady,
+    isLoading: isFHELoading,
+    error: fheError,
+  } = useFHEReady()
+  const {
+    transfer,
     isLoading: isTransferLoading,
     isInitiating,
     isConfirmed,
     error: transferError,
     canTransfer,
-    txHash
+    txHash,
   } = useTransferContract()
 
   const handleTransfer = async () => {
@@ -28,7 +38,9 @@ export default function TransferPage() {
       await transfer(recipient, transferAmount)
     } catch (error) {
       console.error('Transfer error:', error)
-      alert(error instanceof Error ? error.message : 'Failed to transfer tokens')
+      alert(
+        error instanceof Error ? error.message : 'Failed to transfer tokens',
+      )
     }
   }
 
@@ -141,13 +153,24 @@ export default function TransferPage() {
 
               <button
                 onClick={handleTransfer}
-                disabled={!isConnected || !recipient || !amount || isTransferLoading || !canTransfer}
-                className={`w-full primary-bg text-white py-3 px-4 rounded-md font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${isInitiating ? 'scale-95' : ''}`}
+                disabled={
+                  !isConnected ||
+                  !recipient ||
+                  !amount ||
+                  isTransferLoading ||
+                  !canTransfer
+                }
+                className={`w-full primary-bg text-white py-3 px-6 rounded-md font-medium hover:opacity-90 active:scale-95 active:opacity-75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${
+                  isInitiating ? 'scale-95 opacity-75' : ''
+                }`}
               >
-                {isFHELoading ? 'Initializing FHE...' : 
-                 isInitiating ? 'Preparing Transaction...' :
-                 isTransferLoading ? 'Processing Transfer...' : 
-                 'Send Confidential Transfer'}
+                {isFHELoading
+                  ? 'Initializing FHE...'
+                  : isInitiating
+                  ? 'Preparing Transaction...'
+                  : isTransferLoading
+                  ? 'Processing Transfer...'
+                  : 'Send Confidential Transfer'}
               </button>
 
               {!isConnected && (
@@ -175,7 +198,7 @@ export default function TransferPage() {
                   <CheckCircle className="h-4 w-4" />
                   <span>Transfer completed successfully!</span>
                   {txHash && (
-                    <a 
+                    <a
                       href={`https://sepolia.etherscan.io/tx/${txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"

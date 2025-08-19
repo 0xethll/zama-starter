@@ -2,22 +2,33 @@
 
 import { Sidebar } from '@/components/sidebar'
 import { useState } from 'react'
-import { Coins, Shield, Info, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import {
+  Coins,
+  Shield,
+  Info,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+} from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { useFaucetData, useFaucetMint } from '@/hooks/useFaucetContract'
 import { useFHEReady } from '@/hooks/useFHE'
 
 export default function FaucetPage() {
   const { address, isConnected } = useAccount()
-  const { isReady: isFHEReady, isLoading: isFHELoading, error: fheError } = useFHEReady()
+  const {
+    isReady: isFHEReady,
+    isLoading: isFHELoading,
+    error: fheError,
+  } = useFHEReady()
   const { canClaim, timeUntilNextClaim, lastClaimDate } = useFaucetData()
-  const { 
-    mintFaucetTokens, 
+  const {
+    mintFaucetTokens,
     isLoading: isMintLoading,
     isInitiating,
     isConfirmed,
     error: mintError,
-    canMint 
+    canMint,
   } = useFaucetMint()
 
   const handleClaimTokens = async () => {
@@ -113,7 +124,9 @@ export default function FaucetPage() {
                 <div className="flex justify-between">
                   <span>Last Claim:</span>
                   <span className="font-semibold">
-                    {lastClaimDate ? lastClaimDate.toLocaleDateString() : 'Never'}
+                    {lastClaimDate
+                      ? lastClaimDate.toLocaleDateString()
+                      : 'Never'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -156,13 +169,20 @@ export default function FaucetPage() {
 
               <button
                 onClick={handleClaimTokens}
-                disabled={!isConnected || !canClaim || isMintLoading || !canMint}
-                className={`w-full primary-bg text-white py-3 px-6 rounded-md font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${isInitiating ? 'scale-95' : ''}`}
+                disabled={
+                  !isConnected || !canClaim || isMintLoading || !canMint
+                }
+                className={`w-full primary-bg text-white py-3 px-6 rounded-md font-medium hover:opacity-90 active:scale-95 active:opacity-75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${
+                  isInitiating ? 'scale-95 opacity-75' : ''
+                }`}
               >
-                {isFHELoading ? 'Initializing FHE...' : 
-                 isInitiating ? 'Preparing Transaction...' :
-                 isMintLoading ? 'Claiming...' : 
-                 'Claim 1,000 Confidential Tokens'}
+                {isFHELoading
+                  ? 'Initializing FHE...'
+                  : isInitiating
+                  ? 'Preparing Transaction...'
+                  : isMintLoading
+                  ? 'Claiming...'
+                  : 'Claim 1,000 Confidential Tokens'}
               </button>
 
               {!isConnected && (
@@ -175,8 +195,7 @@ export default function FaucetPage() {
               {isConnected && !canClaim && (
                 <p className="text-center text-sm text-yellow-600 dark:text-yellow-400">
                   You can claim tokens again in{' '}
-                  {Math.ceil(timeUntilNextClaim / (60 * 60 * 1000))}{' '}
-                  hours
+                  {Math.ceil(timeUntilNextClaim / (60 * 60 * 1000))} hours
                 </p>
               )}
 
