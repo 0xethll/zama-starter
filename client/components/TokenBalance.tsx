@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { useFHEReady } from '@/hooks/useFHE'
 import { useConfidentialBalance } from '@/hooks/useFaucetContract'
@@ -21,6 +21,51 @@ export function TokenBalance() {
   const [isBalanceVisible, setIsBalanceVisible] = useState(false)
 
   const { signer } = useSigner()
+
+  // Clear decrypted balance when address changes (wallet switch)
+  useEffect(() => {
+    setDecryptedBalance(null)
+    setIsBalanceVisible(false)
+    setDecryptError(null)
+  }, [address])
+
+  // Clear decrypted balance when encrypted balance changes (after faucet/transfer)
+  useEffect(() => {
+    if (isBalanceVisible) {
+      setDecryptedBalance(null)
+      setIsBalanceVisible(false)
+      setDecryptError(null)
+    }
+  }, [encryptedBalance])
+
+  const progress = useMemo(() => {
+    const steps = [
+      { key: 'wallet', label: 'Connect wallet', complete: !!address },
+      {
+        key: 'connector',
+        label: 'Initialize connector',
+        complete: !!connector,
+      },
+      {
+        key: 'fhe',
+        label: 'Load FHE system',
+        complete: isFHEReady && !!fheInstance,
+      },
+      { key: 'signer', label: 'Initialize signer', complete: !!signer },
+      { key: 'balance', label: 'Load balance', complete: !!encryptedBalance },
+    ]
+
+    const completedCount = steps.filter((step) => step.complete).length
+    const currentStep = steps.find((step) => !step.complete)
+
+    return {
+      steps,
+      completedCount,
+      totalCount: steps.length,
+      currentStep,
+      isComplete: completedCount === steps.length,
+    }
+  }, [address, connector, isFHEReady, fheInstance, signer, encryptedBalance])
 
   const decryptBalance = useCallback(async () => {
     if (
@@ -70,6 +115,7 @@ export function TokenBalance() {
   if (!address) {
     return null
   }
+  const canDecrypt = progress.isComplete
 
   return (
     <div className="space-y-2">
@@ -94,13 +140,17 @@ export function TokenBalance() {
 
         <button
           onClick={toggleBalanceVisibility}
-          disabled={isDecrypting || !isFHEReady}
+          disabled={isDecrypting || !canDecrypt}
           className={cn(
             'p-1.5 rounded-md transition-colors',
             'hover:bg-gray-100 dark:hover:bg-gray-700',
             'disabled:opacity-50 disabled:cursor-not-allowed',
           )}
-          title={isBalanceVisible ? 'Hide balance' : 'Show balance'}
+          title={
+            isBalanceVisible
+              ? 'Hide balance'
+              : progress.currentStep?.label || 'Show balance'
+          }
         >
           {isDecrypting ? (
             <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
@@ -115,6 +165,69 @@ export function TokenBalance() {
       {decryptError && (
         <div className="text-xs text-red-500 dark:text-red-400">
           {decryptError}
+        </div>
+      )}
+
+      {!canDecrypt && !isDecrypting && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-600 dark:text-gray-400">
+              Initializing ({progress.completedCount}/{progress.totalCount})
+            </span>
+            <span className="text-gray-500">
+              {Math.round(
+                (progress.completedCount / progress.totalCount) * 100,
+              )}
+              %
+            </span>
+          </div>
+
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div
+              className="bg-blue-500 h-1.5 rounded-full transition-all duration-300 ease-out"
+              style={{
+                width: `${
+                  (progress.completedCount / progress.totalCount) * 100
+                }%`,
+              }}
+            />
+          </div>
+
+          {progress.currentStep && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>{progress.currentStep.label}...</span>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            {progress.steps.map((step) => (
+              <div key={step.key} className="flex items-center gap-2 text-xs">
+                <div
+                  className={cn(
+                    'w-1.5 h-1.5 rounded-full transition-colors',
+                    step.complete
+                      ? 'bg-green-500'
+                      : step === progress.currentStep
+                      ? 'bg-amber-500 animate-pulse'
+                      : 'bg-gray-300 dark:bg-gray-600',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'transition-colors',
+                    step.complete
+                      ? 'text-green-600 dark:text-green-400'
+                      : step === progress.currentStep
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-gray-500 dark:text-gray-400',
+                  )}
+                >
+                  {step.label}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

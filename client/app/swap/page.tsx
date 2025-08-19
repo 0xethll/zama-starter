@@ -191,17 +191,6 @@ export default function SwapPage() {
               )}
             </div>
           </div>
-
-          <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <h4 className="font-semibold mb-2 text-yellow-900 dark:text-yellow-100">
-              Note
-            </h4>
-            <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              This demonstrates the UI for an FHE-powered AMM. The actual swap
-              logic would involve encrypted liquidity pools and confidential
-              price calculations using Zamas FHE technology.
-            </p>
-          </div>
         </div>
       </main>
     </div>
