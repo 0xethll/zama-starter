@@ -1,6 +1,6 @@
 'use client'
 
-import { Sidebar } from '@/components/sidebar'
+import { AppLayout } from '@/components/AppLayout'
 import { useState } from 'react'
 import {
   ArrowUpDown,
@@ -45,9 +45,8 @@ export default function TransferPage() {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <main className="flex-1 p-8 overflow-auto">
+    <AppLayout>
+      <div className="p-8">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-4 flex items-center gap-2">
@@ -218,7 +217,7 @@ export default function TransferPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   )
 }

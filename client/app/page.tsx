@@ -1,11 +1,10 @@
-import { Sidebar } from '@/components/sidebar'
+import { AppLayout } from '@/components/AppLayout'
 import { Shield, Lock, Zap } from 'lucide-react'
 
 export default function Home() {
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <main className="flex-1 p-8 overflow-auto">
+    <AppLayout>
+      <div className="p-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-4">Welcome to Zama Learning Platform</h1>
@@ -75,7 +74,7 @@ export default function Home() {
             </section>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   )
 }

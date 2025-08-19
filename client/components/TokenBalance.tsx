@@ -1,71 +1,41 @@
 'use client'
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { useFHEReady } from '@/hooks/useFHE'
-import { useConfidentialBalance } from '@/hooks/useFaucetContract'
 import { decryptForUser, formatTokenAmount } from '@/lib/fhe'
 import { CONTRACTS } from '@/lib/contracts'
 import { Coins, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useSigner } from '@/hooks/useSinger'
+import { useFHEContext } from '@/contexts/FHEContext'
 
 export function TokenBalance() {
-  const { address, connector } = useAccount()
-  const { isReady: isFHEReady, fheInstance } = useFHEReady()
-  const { encryptedBalance } = useConfidentialBalance()
+  const { address } = useAccount()
+  const { 
+    isFHEReady, 
+    fheInstance, 
+    signer, 
+    encryptedBalance, 
+    decryptedBalance,
+    isBalanceVisible,
+    setDecryptedBalance,
+    setIsBalanceVisible,
+    progress 
+  } = useFHEContext()
 
-  const [decryptedBalance, setDecryptedBalance] = useState<bigint | null>(null)
   const [isDecrypting, setIsDecrypting] = useState(false)
   const [decryptError, setDecryptError] = useState<string | null>(null)
-  const [isBalanceVisible, setIsBalanceVisible] = useState(false)
 
-  const { signer } = useSigner()
-
-  // Clear decrypted balance when address changes (wallet switch)
+  // Clear decrypt error when address changes
   useEffect(() => {
-    setDecryptedBalance(null)
-    setIsBalanceVisible(false)
     setDecryptError(null)
   }, [address])
 
-  // Clear decrypted balance when encrypted balance changes (after faucet/transfer)
+  // Clear decrypt error when encrypted balance changes
   useEffect(() => {
-    if (isBalanceVisible) {
-      setDecryptedBalance(null)
-      setIsBalanceVisible(false)
+    if (decryptError) {
       setDecryptError(null)
     }
   }, [encryptedBalance])
-
-  const progress = useMemo(() => {
-    const steps = [
-      { key: 'wallet', label: 'Connect wallet', complete: !!address },
-      {
-        key: 'connector',
-        label: 'Initialize connector',
-        complete: !!connector,
-      },
-      {
-        key: 'fhe',
-        label: 'Load FHE system',
-        complete: isFHEReady && !!fheInstance,
-      },
-      { key: 'signer', label: 'Initialize signer', complete: !!signer },
-      { key: 'balance', label: 'Load balance', complete: !!encryptedBalance },
-    ]
-
-    const completedCount = steps.filter((step) => step.complete).length
-    const currentStep = steps.find((step) => !step.complete)
-
-    return {
-      steps,
-      completedCount,
-      totalCount: steps.length,
-      currentStep,
-      isComplete: completedCount === steps.length,
-    }
-  }, [address, connector, isFHEReady, fheInstance, signer, encryptedBalance])
 
   const decryptBalance = useCallback(async () => {
     if (
@@ -73,7 +43,6 @@ export function TokenBalance() {
       !encryptedBalance ||
       !isFHEReady ||
       !fheInstance ||
-      !connector ||
       !signer
     ) {
       return
@@ -100,7 +69,7 @@ export function TokenBalance() {
     } finally {
       setIsDecrypting(false)
     }
-  }, [address, encryptedBalance, isFHEReady, fheInstance, connector, signer])
+  }, [address, encryptedBalance, isFHEReady, fheInstance, signer])
 
   const toggleBalanceVisibility = () => {
     if (isBalanceVisible) {
