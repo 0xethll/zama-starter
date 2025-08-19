@@ -1,37 +1,31 @@
 'use client'
 
 import { Sidebar } from '@/components/sidebar'
-import { useState } from 'react'
-import { Coins, Shield, Info, CheckCircle, Clock } from 'lucide-react'
+import { Coins, Shield, Info, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 import { useAccount } from 'wagmi'
+import { useFaucetData, useFaucetMint } from '@/hooks/useFaucetContract'
+import { useFHEReady } from '@/hooks/useFHE'
 
 export default function FaucetPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [lastClaim, setLastClaim] = useState<Date | null>(null)
   const { address, isConnected } = useAccount()
+  const { isReady: isFHEReady, isLoading: isFHELoading, error: fheError } = useFHEReady()
+  const { canClaim, timeUntilNextClaim, lastClaimDate } = useFaucetData()
+  const { 
+    mintFaucetTokens, 
+    isLoading: isMintLoading, 
+    isConfirmed,
+    error: mintError,
+    canMint 
+  } = useFaucetMint()
 
   const handleClaimTokens = async () => {
-    if (!isConnected) {
-      alert('Please connect your wallet first')
-      return
-    }
-
-    setIsLoading(true)
     try {
-      // TODO: Implement FHE token faucet logic
-      console.log('Claiming tokens for:', address)
-      await new Promise((resolve) => setTimeout(resolve, 2000)) // Simulate claim
-      setLastClaim(new Date())
-      alert('Successfully claimed 1000 confidential test tokens!')
+      await mintFaucetTokens()
     } catch (error) {
       console.error('Claim error:', error)
-    } finally {
-      setIsLoading(false)
+      alert(error instanceof Error ? error.message : 'Failed to claim tokens')
     }
   }
-
-  const canClaim =
-    !lastClaim || Date.now() - lastClaim.getTime() > 24 * 60 * 60 * 1000
 
   return (
     <div className="flex h-screen">
@@ -117,7 +111,7 @@ export default function FaucetPage() {
                 <div className="flex justify-between">
                   <span>Last Claim:</span>
                   <span className="font-semibold">
-                    {lastClaim ? lastClaim.toLocaleDateString() : 'Never'}
+                    {lastClaimDate ? lastClaimDate.toLocaleDateString() : 'Never'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -160,10 +154,12 @@ export default function FaucetPage() {
 
               <button
                 onClick={handleClaimTokens}
-                disabled={!isConnected || !canClaim || isLoading}
+                disabled={!isConnected || !canClaim || isMintLoading || !canMint}
                 className="w-full primary-bg text-white py-3 px-6 rounded-md font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Claiming...' : 'Claim 1,000 Confidential Tokens'}
+                {isFHELoading ? 'Initializing FHE...' : 
+                 isMintLoading ? 'Claiming...' : 
+                 'Claim 1,000 Confidential Tokens'}
               </button>
 
               {!isConnected && (
@@ -176,14 +172,35 @@ export default function FaucetPage() {
               {isConnected && !canClaim && (
                 <p className="text-center text-sm text-yellow-600 dark:text-yellow-400">
                   You can claim tokens again in{' '}
-                  {lastClaim
-                    ? Math.ceil(
-                        (24 * 60 * 60 * 1000 -
-                          (Date.now() - lastClaim.getTime())) /
-                          (60 * 60 * 1000),
-                      )
-                    : 0}{' '}
+                  {Math.ceil(timeUntilNextClaim / (60 * 60 * 1000))}{' '}
                   hours
+                </p>
+              )}
+
+              {fheError && (
+                <div className="flex items-center justify-center gap-2 text-center text-sm text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>FHE Error: {fheError}</span>
+                </div>
+              )}
+
+              {mintError && (
+                <div className="flex items-center justify-center gap-2 text-center text-sm text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>{mintError}</span>
+                </div>
+              )}
+
+              {isConfirmed && (
+                <div className="flex items-center justify-center gap-2 text-center text-sm text-green-600 dark:text-green-400">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Successfully claimed 1,000 confidential tokens!</span>
+                </div>
+              )}
+
+              {isFHELoading && (
+                <p className="text-center text-sm text-blue-600 dark:text-blue-400">
+                  Initializing FHE encryption... Please wait.
                 </p>
               )}
             </div>
