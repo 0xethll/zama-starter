@@ -3,15 +3,7 @@
 // Import types only for server-side compatibility
 import type { FhevmInstance } from '@zama-fhe/relayer-sdk/bundle'
 
-// Type for signer (simplified ethers.Signer interface)
-interface Signer {
-  address: string
-  signTypedData: (
-    domain: Record<string, unknown>,
-    types: Record<string, unknown>,
-    message: Record<string, unknown>,
-  ) => Promise<string>
-}
+import { Signer } from 'ethers'
 
 /**
  * Initialize the FHE SDK
@@ -123,7 +115,7 @@ export async function decryptForUser(
     keypair.publicKey,
     signature.replace('0x', ''),
     contractAddresses,
-    signer.address,
+    await signer.getAddress(),
     startTimeStamp,
     durationDays,
   )

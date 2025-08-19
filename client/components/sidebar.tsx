@@ -12,6 +12,7 @@ import {
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { TokenBalance } from './TokenBalance'
 
 const navigation = [
   { name: 'Overview', href: '/', icon: FileText },
@@ -65,6 +66,7 @@ export function Sidebar() {
       {/* Wallet Connection */}
       <div className="px-4 pb-6">
         <div className="space-y-3">
+          <TokenBalance />
           <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             Network: Sepolia Only
           </div>
