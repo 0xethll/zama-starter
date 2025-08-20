@@ -1,14 +1,7 @@
 'use client'
 
 import { ConnectKitButton } from 'connectkit'
-import {
-  Shield,
-  ArrowUpDown,
-  Repeat2,
-  Coins,
-  PlayCircle,
-  FileText,
-} from 'lucide-react'
+import { Shield, ArrowUpDown, Repeat2, Coins, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -19,7 +12,6 @@ const navigation = [
   { name: 'Token Transfer', href: '/transfer', icon: ArrowUpDown },
   { name: 'Token Swap', href: '/swap', icon: Repeat2 },
   { name: 'Faucet', href: '/faucet', icon: Coins },
-  { name: 'Media', href: '/media', icon: PlayCircle },
 ]
 
 export function Sidebar() {

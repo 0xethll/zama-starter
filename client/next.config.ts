@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Apply COEP credentialless to all pages - works with iframes and FHE
         source: '/(.*)',
         headers: [
           {
@@ -27,7 +28,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
+            value: 'credentialless',
           },
         ],
       },

@@ -11,7 +11,7 @@ export default function SwapPage() {
   const [amountA, setAmountA] = useState('')
   const [amountB, setAmountB] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { address, isConnected } = useAccount()
+  const { isConnected } = useAccount()
 
   const handleSwap = async () => {
     if (!isConnected) {
