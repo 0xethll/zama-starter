@@ -96,16 +96,26 @@ export default function Home() {
                   </h3>
 
                   <div className="max-w-4xl mx-auto">
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-                      <div className="aspect-video">
-                        <iframe
-                          src="https://www.youtube.com/embed/UxMf2qV5IpU"
-                          title="Zama Introduction Video"
-                          className="w-full h-full"
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        ></iframe>
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-8">
+                      <div className="text-center">
+                        <PlayCircle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                        <h4 className="text-lg font-semibold mb-2">
+                          Zama Introduction Video
+                        </h4>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          Learn about Fully Homomorphic Encryption and
+                          Zama&apos;s vision for confidential computing
+                        </p>
+                        <a
+                          href="https://www.youtube.com/watch?v=UxMf2qV5IpU"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                        >
+                          <PlayCircle className="h-4 w-4" />
+                          Watch on YouTube
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -119,16 +129,27 @@ export default function Home() {
                   </h3>
 
                   <div className="max-w-3xl mx-auto">
-                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-                      <iframe
-                        width="100%"
-                        height="240"
-                        scrolling="no"
-                        frameBorder="no"
-                        allow="autoplay"
-                        src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/2156124450&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"
-                        title="Unlocking Confidential Blockchains Zama FHEVM and the Future of Encrypted dApps"
-                      ></iframe>
+                    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-8">
+                      <div className="text-center">
+                        <Volume2 className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                        <h4 className="text-lg font-semibold mb-2">
+                          Unlocking Confidential Blockchains
+                        </h4>
+                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                          Deep dive into Zama FHEVM and the Future of Encrypted
+                          dApps
+                        </p>
+                        <a
+                          href="https://soundcloud.com/user-123456789/unlocking-confidential-blockchains-zama-fhevm-and-the-future-of-encrypted-dapps"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+                        >
+                          <Volume2 className="h-4 w-4" />
+                          Listen on SoundCloud
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
