@@ -16,7 +16,7 @@ export default function Home() {
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-4">Welcome to Zama Starter</h1>
             <p className="text-xl text-gray-600 dark:text-gray-400">
-              The first APP exploring Fully Homomorphic Encryption (FHE) and
+              The first stop exploring Fully Homomorphic Encryption (FHE) and
               ZAMA through hands-on experience
             </p>
           </div>
