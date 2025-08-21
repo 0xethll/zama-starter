@@ -2,7 +2,7 @@
 
 export const CONTRACTS = {
   FAUCET_TOKEN: {
-    address: '0x84b490df85214c40B01dEA0bf444c9C744cAdB94' as const,
+    address: '0x78ab3a36B4DD7bB2AD45808F9C5dAe9a1c075C19' as const,
     abi: [
       {
         inputs: [
@@ -103,7 +103,7 @@ export const CONTRACTS = {
 
 // Contract constants
 export const MINT_AMOUNT = BigInt(1000 * 1000000) // 1000 tokens with 6 decimals
-export const COOLDOWN_PERIOD = 2 * 60 * 1000 // 24 hours in milliseconds
+export const COOLDOWN_PERIOD = 24 * 60 * 60 * 1000 // 24 hours in milliseconds
 
 // Network configuration
 export const SEPOLIA_CHAIN_ID = 11155111

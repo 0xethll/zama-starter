@@ -10,7 +10,7 @@ contract FaucetToken is SepoliaConfig, ConfidentialFungibleToken {
 
     error MintCooldownActive(uint256 timeRemaining);
 
-    uint256 public constant MINT_COOLDOWN = 2 minutes;
+    uint256 public constant MINT_COOLDOWN = 24 hours;
     uint64 public constant MAX_MINT_AMOUNT = 1000_000_000;
     mapping(address => uint256) public lastMintTime;
 

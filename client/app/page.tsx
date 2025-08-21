@@ -140,7 +140,7 @@ export default function Home() {
                           dApps
                         </p>
                         <a
-                          href="https://soundcloud.com/user-123456789/unlocking-confidential-blockchains-zama-fhevm-and-the-future-of-encrypted-dapps"
+                          href="https://on.soundcloud.com/xXUr2pQmBdhSWX8Vhu"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
