@@ -1,9 +1,10 @@
-import { http, createConfig } from 'wagmi'
+import { http, createConfig, fallback } from 'wagmi'
 import { sepolia } from 'wagmi/chains'
 import { getDefaultConfig } from 'connectkit'
 
 const walletConnectProjectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || ''
+const infuraRpcURL = process.env.NEXT_PUBLIC_INFURA_RPC_URL || ''
 
 export const config = createConfig(
   getDefaultConfig({
@@ -18,7 +19,10 @@ export const config = createConfig(
     chains: [sepolia],
     transports: {
       // RPC URL for each chain with fallback
-      [sepolia.id]: http('https://ethereum-sepolia-rpc.publicnode.com'),
+      [sepolia.id]: fallback([
+        http(infuraRpcURL),
+        http('https://ethereum-sepolia-rpc.publicnode.com'),
+      ]),
     },
   }),
 )
