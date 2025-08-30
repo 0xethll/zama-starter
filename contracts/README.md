@@ -12,12 +12,14 @@ To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
 
 ```shell
 npx hardhat keystore set SEPOLIA_PRIVATE_KEY
+
+npx hardhat keystore set SEPOLIA_RPC_URL
 ```
 
 After setting the variable, you can run the deployment with the Sepolia network:
 
 ```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
+npx hardhat ignition deploy --network sepolia ./ignition/modules/WrapperToken.ts --parameters ./ignition/parameters/WrapperToken.json
 ```
 
 ## Deployed Addresses
@@ -25,3 +27,5 @@ npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
 CounterModule#FaucetToken - 0x78ab3a36B4DD7bB2AD45808F9C5dAe9a1c075C19
 
 CounterModule - 2 minutes claim period for tesing - 0x84b490df85214c40B01dEA0bf444c9C744cAdB94
+USDERC20Module#USDERC20 - 0xE9813e4c768C14bE7219dFB7882Da1aBF14236E8
+WrapperTokenModule#WrapperToken - 0x521681652F0E3E6C0D074E9FFB50B38dc10C836e
