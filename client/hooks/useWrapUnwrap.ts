@@ -213,17 +213,9 @@ export function useUnwrapToken() {
     useEffect(() => {
         if (isConfirmed || (error && !isConfirming)) {
             setIsUnwrapping(false)
-
-            refetchUsdBalance()
             refetchWrappedTokenBalance()
         }
-    }, [
-        isConfirmed,
-        error,
-        isConfirming,
-        refetchUsdBalance,
-        refetchWrappedTokenBalance,
-    ])
+    }, [isConfirmed, error, isConfirming, refetchWrappedTokenBalance])
 
     const resetUnwrap = () => {
         setUnwrapError(null)

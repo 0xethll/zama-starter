@@ -38,6 +38,7 @@ export function useUsdBalance() {
         args: address ? [address] : undefined,
         query: {
             enabled: !!address,
+            refetchInterval: 5000,
         },
     })
 

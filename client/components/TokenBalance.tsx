@@ -151,7 +151,6 @@ export function TokenBalance() {
 
         try {
             let balance
-            console.log(wrappedEncryptedBalance)
             if (
                 wrappedEncryptedBalance ==
                 '0x0000000000000000000000000000000000000000000000000000000000000000'
