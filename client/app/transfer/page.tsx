@@ -172,7 +172,13 @@ export default function TransferPage() {
                   : 'Send Confidential Transfer'}
               </button>
 
-              {!isConnected && (
+              {isFHELoading && (
+                <p className="text-center text-sm text-blue-600 dark:text-blue-400">
+                  Initializing FHE encryption... Please wait.
+                </p>
+              )}
+
+              {isFHEReady && !isConnected && (
                 <p className="text-center text-sm text-red-600 dark:text-red-400">
                   Please connect your wallet to the Sepolia network to continue
                 </p>

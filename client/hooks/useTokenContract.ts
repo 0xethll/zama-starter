@@ -46,3 +46,25 @@ export function useUsdBalance() {
         refetch,
     }
 }
+
+/**
+ * Hook to get wrapped token confidential balance (returns encrypted handle)
+ */
+export function useWrappedTokenBalance() {
+    const { address } = useAccount()
+
+    const { data: encryptedBalance, refetch } = useReadContract({
+        address: CONTRACTS.WRAPPER_TOKEN.address,
+        abi: CONTRACTS.WRAPPER_TOKEN.abi,
+        functionName: 'confidentialBalanceOf',
+        args: address ? [address] : undefined,
+        query: {
+            enabled: !!address,
+        },
+    })
+
+    return {
+        encryptedBalance,
+        refetch,
+    }
+}

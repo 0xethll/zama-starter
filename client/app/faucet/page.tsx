@@ -204,7 +204,13 @@ export default function FaucetPage() {
                   : 'Claim 1,000 Confidential Tokens'}
               </button>
 
-              {!isConnected && (
+              {isFHELoading && (
+                <p className="text-center text-sm text-blue-600 dark:text-blue-400">
+                  Initializing FHE encryption... Please wait.
+                </p>
+              )}
+
+              {isFHEReady && !isConnected && (
                 <p className="text-center text-sm text-red-600 dark:text-red-400">
                   Please connect your wallet to the Sepolia network to claim
                   tokens
@@ -237,12 +243,6 @@ export default function FaucetPage() {
                   <CheckCircle className="h-4 w-4" />
                   <span>Successfully claimed 1,000 confidential tokens!</span>
                 </div>
-              )}
-
-              {isFHELoading && (
-                <p className="text-center text-sm text-blue-600 dark:text-blue-400">
-                  Initializing FHE encryption... Please wait.
-                </p>
               )}
             </div>
           </div>
@@ -364,7 +364,7 @@ export default function FaucetPage() {
                   : 'Claim 1,000 USD Tokens'}
               </button>
 
-              {!isConnected && (
+              {!isConnected && !isFHELoading && (
                 <p className="text-center text-sm text-red-600 dark:text-red-400">
                   Please connect your wallet to the Sepolia network to claim
                   tokens
