@@ -24,8 +24,8 @@ npx hardhat ignition deploy --network sepolia ./ignition/modules/WrapperToken.ts
 
 ## Deployed Addresses
 
-CounterModule#FaucetToken - 0x78ab3a36B4DD7bB2AD45808F9C5dAe9a1c075C19
+FaucetToken - 0x78ab3a36B4DD7bB2AD45808F9C5dAe9a1c075C19
+FaucetToken - 2 minutes claim period for tesing - 0x84b490df85214c40B01dEA0bf444c9C744cAdB94
 
-CounterModule - 2 minutes claim period for tesing - 0x84b490df85214c40B01dEA0bf444c9C744cAdB94
 USDERC20Module#USDERC20 - 0xE9813e4c768C14bE7219dFB7882Da1aBF14236E8
 WrapperTokenModule#WrapperToken - 0x521681652F0E3E6C0D074E9FFB50B38dc10C836e

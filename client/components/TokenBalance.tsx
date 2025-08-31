@@ -4,9 +4,11 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useAccount } from 'wagmi'
 import { decryptForUser, formatTokenAmount } from '@/lib/fhe'
 import { CONTRACTS } from '@/lib/contracts'
-import { Coins, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Coins, Eye, EyeOff, Loader2, DollarSign } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useFHEContext } from '@/contexts/FHEContext'
+import { useUsdBalance } from '@/hooks/useTokenContract'
+import { formatUnits } from 'viem'
 
 export function TokenBalance() {
   const { address, connector } = useAccount()
@@ -24,6 +26,9 @@ export function TokenBalance() {
 
   const [isDecrypting, setIsDecrypting] = useState(false)
   const [decryptError, setDecryptError] = useState<string | null>(null)
+  
+  // USD balance
+  const { balance: usdBalance } = useUsdBalance()
 
   // Calculate progress state locally (moved from FHEContext for performance)
   const progress = useMemo(() => {
@@ -119,12 +124,13 @@ export function TokenBalance() {
   return (
     <div className="space-y-2">
       <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-        Token Balance
+        Token Balances
       </div>
 
+      {/* Confidential Token Balance */}
       <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
-          <Coins className="h-4 w-4 text-blue-500" />
+          <Coins className="h-4 w-4 text-green-500" />
           <div className="flex flex-col">
             <span className="text-xs text-gray-500 dark:text-gray-400">
               Confidential Token
@@ -159,6 +165,21 @@ export function TokenBalance() {
             <Eye className="h-4 w-4 text-gray-500" />
           )}
         </button>
+      </div>
+
+      {/* USD Token Balance */}
+      <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-blue-500" />
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              USD Token
+            </span>
+            <span className="text-sm font-medium">
+              {usdBalance ? formatUnits(usdBalance, 6) : '0'} USD
+            </span>
+          </div>
+        </div>
       </div>
 
       {decryptError && (
