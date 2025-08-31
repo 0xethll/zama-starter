@@ -108,12 +108,20 @@ export function TokenBalance() {
         setDecryptError(null)
 
         try {
-            const balance = await decryptForUser(
-                fheInstance,
-                encryptedBalance as string,
-                CONTRACTS.FAUCET_TOKEN.address,
-                signer,
-            )
+            let balance
+            if (
+                encryptedBalance ==
+                '0x0000000000000000000000000000000000000000000000000000000000000000'
+            ) {
+                balance = BigInt(0)
+            } else {
+                balance = await decryptForUser(
+                    fheInstance,
+                    encryptedBalance as string,
+                    CONTRACTS.FAUCET_TOKEN.address,
+                    signer,
+                )
+            }
 
             console.log('balance', balance)
 
@@ -142,12 +150,21 @@ export function TokenBalance() {
         setWrappedDecryptError(null)
 
         try {
-            const balance = await decryptForUser(
-                fheInstance,
-                wrappedEncryptedBalance as string,
-                CONTRACTS.WRAPPER_TOKEN.address,
-                signer,
-            )
+            let balance
+            console.log(wrappedEncryptedBalance)
+            if (
+                wrappedEncryptedBalance ==
+                '0x0000000000000000000000000000000000000000000000000000000000000000'
+            ) {
+                balance = BigInt(0)
+            } else {
+                balance = await decryptForUser(
+                    fheInstance,
+                    wrappedEncryptedBalance as string,
+                    CONTRACTS.WRAPPER_TOKEN.address,
+                    signer,
+                )
+            }
 
             console.log('wrapped balance', balance)
 
