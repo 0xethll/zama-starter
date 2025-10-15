@@ -18,7 +18,7 @@ const navigation = [
     { name: 'Overview', href: '/', icon: FileText },
     { name: 'Token Transfer', href: '/transfer', icon: ArrowUpDown },
     { name: 'Wrap & Unwrap', href: '/wrap', icon: Package },
-    { name: 'Token Swap', href: '/swap', icon: Repeat2 },
+    // { name: 'Token Swap', href: '/swap', icon: Repeat2 },
     { name: 'Faucet', href: '/faucet', icon: Coins },
 ]
 
