@@ -3,8 +3,8 @@ pragma solidity ^0.8.28;
 
 import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {FHE, externalEuint64, ebool, euint64} from "@fhevm/solidity/lib/FHE.sol";
-import {ConfidentialFungibleToken} from "openzeppelin-confidential-contracts/contracts/token/ConfidentialFungibleToken.sol";
-import {ConfidentialFungibleTokenERC20Wrapper} from "openzeppelin-confidential-contracts/contracts/token/extensions/ConfidentialFungibleTokenERC20Wrapper.sol";
+import {ConfidentialFungibleToken} from "@openzeppelin/confidential-contracts/contracts/token/ConfidentialFungibleToken.sol";
+import {ConfidentialFungibleTokenERC20Wrapper} from "@openzeppelin/confidential-contracts/contracts/token/extensions/ConfidentialFungibleTokenERC20Wrapper.sol";
 import {SepoliaConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
 
 contract WrapperToken is SepoliaConfig, ConfidentialFungibleTokenERC20Wrapper {
