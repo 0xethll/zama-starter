@@ -4,12 +4,12 @@
   "type": "module",
   "dependencies": {
     "encrypted-types": "^0.0.4",
-    "@fhevm/solidity": "^0.7.0",
+    "@fhevm/solidity": "^0.9.1",
     "@zama-fhe/oracle-solidity": "^0.1.0",
     "@openzeppelin/contracts": "^5.1.0",
     "@openzeppelin/contracts-upgradeable": "^5.1.0",
     "@openzeppelin/merkle-tree": "^1.0.7",
-    "@openzeppelin/confidential-contracts": "github:OpenZeppelin/openzeppelin-confidential-contracts#v0.2.0"
+    "@openzeppelin/confidential-contracts": "github:OpenZeppelin/openzeppelin-confidential-contracts#master"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.0.0",
