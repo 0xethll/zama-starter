@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import {IERC20} from "@openzeppelin/contracts/interfaces/IERC20.sol";
 import {FHE, externalEuint64, ebool, euint64} from "@fhevm/solidity/lib/FHE.sol";
 import {ConfidentialFungibleToken} from "@openzeppelin/confidential-contracts/contracts/token/ConfidentialFungibleToken.sol";
-import {SepoliaConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
+import { ZamaEthereumConfig } from "@fhevm/solidity/config/ZamaConfig.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {ConfidentialFungibleTokenERC20Wrapper} from "@openzeppelin/confidential-contracts/contracts/token/extensions/ConfidentialFungibleTokenERC20Wrapper.sol";
 
 /**
  * @title ConfidentialUSDX402 - Privacy-preserving X402 Compatible Token
  * @notice Supports fully private authorized transfers; the signature does not contain the plaintext transfer value.
  */
-contract ConfidentialUSDX402 is SepoliaConfig, ConfidentialFungibleToken, EIP712 {
+contract ConfidentialUSDX402 is ZamaEthereumConfig, ConfidentialFungibleTokenERC20Wrapper, EIP712{
     using ECDSA for bytes32;
 
     uint64 public constant MAX_MINT_AMOUNT = 10_000_000;
@@ -45,8 +47,9 @@ contract ConfidentialUSDX402 is SepoliaConfig, ConfidentialFungibleToken, EIP712
         string memory name,
         string memory symbol,
         string memory uri,
-        address _facilitator
-    ) ConfidentialFungibleToken(name, symbol, uri) EIP712(name, "1") {
+        address _facilitator,
+        IERC20 underlying
+    ) ConfidentialFungibleToken(name, symbol, uri) EIP712(name, "1") ConfidentialFungibleTokenERC20Wrapper(underlying) {
         facilitator = _facilitator;
     }
 
@@ -122,7 +125,12 @@ contract ConfidentialUSDX402 is SepoliaConfig, ConfidentialFungibleToken, EIP712
         emit AuthorizationUsed(from, to, transferred, nonce);
     }
 
+    function burn(address from, externalEuint64 amount, bytes memory inputProof) public {
+        _burn(from, amount.fromExternal(inputProof));
+    }
+
+    // TODO: limit owner
     function updateFacilitator(address newFacilitator) external {
-          facilitator = newFacilitator;
-      }
+        facilitator = newFacilitator;
+    }
 }
