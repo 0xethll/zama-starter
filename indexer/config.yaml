@@ -2,7 +2,7 @@
 name: indexer
 networks:
 - id: 11155111
-  start_block: 9666221
+  start_block: 9666220
   contracts:
   - name: ConfidentialUSDX402
     address:
