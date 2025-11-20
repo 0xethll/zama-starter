@@ -41,9 +41,9 @@ export function useUsdApproval() {
     const [isApproving, setIsApproving] = useState(false)
     const [approvalError, setApprovalError] = useState<string | null>(null)
 
-    const { writeContract, data: hash, error, reset } = useWriteContract()
+    const { writeContract, data: hash, reset } = useWriteContract()
 
-    const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    const { isLoading: isConfirming, isSuccess: isConfirmed, error } =
         useWaitForTransactionReceipt({
             hash,
         })
@@ -52,10 +52,11 @@ export function useUsdApproval() {
         try {
             setIsApproving(true)
             setApprovalError(null)
+            reset() // Reset any previous errors
 
             const amountWei = parseUnits(amount, 6) // USD token has 6 decimals
 
-            await writeContract({
+            writeContract({
                 address: CONTRACTS.USD_ERC20.address,
                 abi: CONTRACTS.USD_ERC20.abi,
                 functionName: 'approve',
@@ -72,10 +73,18 @@ export function useUsdApproval() {
 
     // Reset approving state when transaction completes
     useEffect(() => {
-        if (isConfirmed || (error && !isConfirming)) {
+        if (isConfirmed) {
             setIsApproving(false)
         }
-    }, [isConfirmed, error, isConfirming])
+    }, [isConfirmed])
+
+    // Handle errors
+    useEffect(() => {
+        if (error) {
+            setIsApproving(false)
+            setApprovalError(error.message || 'Failed to approve tokens')
+        }
+    }, [error])
 
     const resetApproval = () => {
         setApprovalError(null)
@@ -101,12 +110,12 @@ export function useWrapToken() {
     const [isWrapping, setIsWrapping] = useState(false)
     const [wrapError, setWrapError] = useState<string | null>(null)
 
-    const { writeContract, data: hash, error, reset } = useWriteContract()
+    const { writeContract, data: hash, reset } = useWriteContract()
 
     const { refetch: refetchUsdBalance } = useUsdBalance()
     const { refetch: refetchCUSDBalance } = useCUSDBalance()
 
-    const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    const { isLoading: isConfirming, isSuccess: isConfirmed, error } =
         useWaitForTransactionReceipt({
             hash,
         })
@@ -117,10 +126,11 @@ export function useWrapToken() {
         try {
             setIsWrapping(true)
             setWrapError(null)
+            reset() // Reset any previous errors
 
             const amountWei = parseUnits(amount, 6) // USD token has 6 decimals
 
-            await writeContract({
+            writeContract({
                 address: CONTRACTS.cUSD_ERC7984.address,
                 abi: CONTRACTS.cUSD_ERC7984.abi,
                 functionName: 'wrap',
@@ -135,20 +145,22 @@ export function useWrapToken() {
         }
     }
 
-    // Reset wrapping state when transaction completes
+    // Reset wrapping state when transaction completes or fails
     useEffect(() => {
-        if (isConfirmed || (error && !isConfirming)) {
+        if (isConfirmed) {
             setIsWrapping(false)
             refetchUsdBalance()
             refetchCUSDBalance()
         }
-    }, [
-        isConfirmed,
-        error,
-        isConfirming,
-        refetchUsdBalance,
-        refetchCUSDBalance,
-    ])
+    }, [isConfirmed, refetchUsdBalance, refetchCUSDBalance])
+
+    // Handle errors
+    useEffect(() => {
+        if (error) {
+            setIsWrapping(false)
+            setWrapError(error.message || 'Failed to wrap tokens')
+        }
+    }, [error])
 
     const resetWrap = () => {
         setWrapError(null)
@@ -174,12 +186,12 @@ export function useUnwrapToken() {
     const [isUnwrapping, setIsUnwrapping] = useState(false)
     const [unwrapError, setUnwrapError] = useState<string | null>(null)
 
-    const { writeContract, data: hash, error, reset } = useWriteContract()
+    const { writeContract, data: hash, reset } = useWriteContract()
 
     const { refetch: refetchUsdBalance } = useUsdBalance()
     const { refetch: refetchCUSDBalance } = useCUSDBalance()
 
-    const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    const { isLoading: isConfirming, isSuccess: isConfirmed, error } =
         useWaitForTransactionReceipt({
             hash,
         })
@@ -193,8 +205,9 @@ export function useUnwrapToken() {
         try {
             setIsUnwrapping(true)
             setUnwrapError(null)
+            reset() // Reset any previous errors
 
-            await writeContract({
+            writeContract({
                 address: CONTRACTS.cUSD_ERC7984.address,
                 abi: CONTRACTS.cUSD_ERC7984.abi,
                 functionName: 'unwrap',
@@ -211,11 +224,20 @@ export function useUnwrapToken() {
 
     // Reset unwrapping state when transaction completes
     useEffect(() => {
-        if (isConfirmed || (error && !isConfirming)) {
+        if (isConfirmed) {
             setIsUnwrapping(false)
             refetchCUSDBalance()
+            refetchUsdBalance()
         }
-    }, [isConfirmed, error, isConfirming, refetchCUSDBalance])
+    }, [isConfirmed, refetchCUSDBalance, refetchUsdBalance])
+
+    // Handle errors
+    useEffect(() => {
+        if (error) {
+            setIsUnwrapping(false)
+            setUnwrapError(error.message || 'Failed to unwrap tokens')
+        }
+    }, [error])
 
     const resetUnwrap = () => {
         setUnwrapError(null)

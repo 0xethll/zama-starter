@@ -1,4 +1,4 @@
-// React hooks for interacting with the cUSDToken contract
+// React hooks for interacting with the USD Token contract (faucet)
 
 import { useState, useMemo, useEffect } from 'react'
 import {
@@ -8,22 +8,19 @@ import {
   useWaitForTransactionReceipt,
 } from 'wagmi'
 import { CONTRACTS, MINT_AMOUNT } from '@/lib/contracts'
-import { useFHEContext } from '@/contexts/FHEContext'
-import { encryptUint64 } from '@/lib/fhe'
-import { toHex } from 'viem'
-import { useCUSDBalance, useUsdBalance } from './useTokenContract'
+import { useUsdBalance } from './useTokenContract'
 
 
 /**
- * Hook to read cUSD contract data
+ * Hook to read USD contract data
  */
-export function cUSDData() {
+export function USDData() {
   const { address } = useAccount()
 
   // Read max mint amount
   const { data: maxMintAmount } = useReadContract({
-    address: CONTRACTS.cUSD_ERC7984.address,
-    abi: CONTRACTS.cUSD_ERC7984.abi,
+    address: CONTRACTS.USD_ERC20.address,
+    abi: CONTRACTS.USD_ERC20.abi,
     functionName: 'MAX_MINT_AMOUNT',
   })
 
@@ -33,12 +30,11 @@ export function cUSDData() {
 }
 
 /**
- * Hook to mint tokens from the cUSD
+ * Hook to mint tokens from the USD faucet
  */
 export function cUSDMint() {
   const { address, isConnected } = useAccount()
-  const { isFHEReady, fheInstance } = useFHEContext()
-  const { refetch: refetchBalance } = useCUSDBalance()
+  const { refetch: refetchBalance } = useUsdBalance()
   const [isPreparingTx, setIsPreparingTx] = useState(false)
   const [isInitiating, setIsInitiating] = useState(false)
 
@@ -72,29 +68,15 @@ export function cUSDMint() {
         throw new Error('No wallet address found')
       }
 
-      if (!isFHEReady || !fheInstance) {
-        throw new Error(
-          'FHE system is not ready. Please wait for initialization.',
-        )
-      }
-
       setIsPreparingTx(true)
       resetWrite()
 
-      // Encrypt the mint amount
-      const { handle, proof } = await encryptUint64(
-        fheInstance,
-        CONTRACTS.cUSD_ERC7984.address,
-        address,
-        amount ?? MINT_AMOUNT,
-      )
-
-      // Call the mint function
+      // Call the mint function (no encryption needed for regular ERC20)
       mintTokens({
-        address: CONTRACTS.cUSD_ERC7984.address,
-        abi: CONTRACTS.cUSD_ERC7984.abi,
+        address: CONTRACTS.USD_ERC20.address,
+        abi: CONTRACTS.USD_ERC20.abi,
         functionName: 'mint',
-        args: [address, toHex(handle), toHex(proof)],
+        args: [address, amount ?? MINT_AMOUNT],
       })
     } catch (error) {
       console.error('Error preparing mint transaction:', error)
@@ -153,7 +135,6 @@ export function cUSDMint() {
     error: errorMessage,
     canMint:
       isConnected &&
-      isFHEReady &&
       !isInitiating &&
       !isPreparingTx &&
       !isWriting &&

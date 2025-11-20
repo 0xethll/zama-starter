@@ -2,7 +2,7 @@
 
 export const CONTRACTS = {
   cUSD_ERC7984: {
-    address: '0x8c28fD5DeFf5996C8aa04C8c0176Ac5123C1b5de' as const,
+    address: '0xdCE9Fa07b2ad32D2E6C8051A895262C9914E9445' as const,
     abi: [
       {
         inputs: [
@@ -400,19 +400,6 @@ export const CONTRACTS = {
         ],
         name: 'UnwrapRequested',
         type: 'event',
-      },
-      {
-        inputs: [],
-        name: 'MAX_MINT_AMOUNT',
-        outputs: [
-          {
-            internalType: 'uint64',
-            name: '',
-            type: 'uint64',
-          },
-        ],
-        stateMutability: 'view',
-        type: 'function',
       },
       {
         inputs: [],
@@ -924,29 +911,6 @@ export const CONTRACTS = {
         type: 'function',
       },
       {
-        inputs: [
-          {
-            internalType: 'address',
-            name: 'to',
-            type: 'address',
-          },
-          {
-            internalType: 'externalEuint64',
-            name: 'amount',
-            type: 'bytes32',
-          },
-          {
-            internalType: 'bytes',
-            name: 'inputProof',
-            type: 'bytes',
-          },
-        ],
-        name: 'mint',
-        outputs: [],
-        stateMutability: 'nonpayable',
-        type: 'function',
-      },
-      {
         inputs: [],
         name: 'name',
         outputs: [
@@ -1221,7 +1185,7 @@ export const CONTRACTS = {
     ] as const,
   },
   USD_ERC20: {
-    address: '0x491a02a05c7e377ff2094D0fD41fB6D0b9D0848e' as const,
+    address: '0xA9062b4629bc8fB79cB4eE904C5c9E179e9F492a' as const,
     abi: [
       {
         inputs: [
@@ -1331,17 +1295,6 @@ export const CONTRACTS = {
         type: 'error',
       },
       {
-        inputs: [
-          {
-            internalType: 'uint256',
-            name: 'timeRemaining',
-            type: 'uint256',
-          },
-        ],
-        name: 'MintCooldownActive',
-        type: 'error',
-      },
-      {
         anonymous: false,
         inputs: [
           {
@@ -1390,6 +1343,19 @@ export const CONTRACTS = {
         ],
         name: 'Transfer',
         type: 'event',
+      },
+      {
+        inputs: [],
+        name: 'MAX_MINT_AMOUNT',
+        outputs: [
+          {
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
+          },
+        ],
+        stateMutability: 'view',
+        type: 'function',
       },
       {
         inputs: [
@@ -1500,6 +1466,24 @@ export const CONTRACTS = {
           },
         ],
         stateMutability: 'view',
+        type: 'function',
+      },
+      {
+        inputs: [
+          {
+            internalType: 'address',
+            name: 'to',
+            type: 'address',
+          },
+          {
+            internalType: 'uint256',
+            name: 'amount',
+            type: 'uint256',
+          },
+        ],
+        name: 'mint',
+        outputs: [],
+        stateMutability: 'nonpayable',
         type: 'function',
       },
       {

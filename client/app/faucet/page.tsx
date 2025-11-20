@@ -12,17 +12,11 @@ import {
 } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { cUSDMint } from '@/hooks/useFaucetContract'
-import { useFHEContext } from '@/contexts/FHEContext'
 import { useState } from 'react'
 import { parseTokenAmount } from '@/lib/fhe'
 
 export default function FaucetPage() {
   const { address, isConnected } = useAccount()
-  const {
-    isFHEReady,
-    fheError,
-  } = useFHEContext()
-  const isFHELoading = !isFHEReady && !fheError
   const {
     mintcUSD,
     isLoading: isMintLoading,
@@ -95,7 +89,7 @@ export default function FaucetPage() {
               Token Faucets
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Claim Confidential USD for confidential FHE operations and regular ERC20 transactions
+              Claim USD tokens for testing and wrapping into confidential tokens
             </p>
           </div>
 
@@ -104,12 +98,12 @@ export default function FaucetPage() {
               <Info className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">
-                  Confidential USD
+                  USD Test Tokens
                 </h3>
                 <ul className="text-sm text-green-800 dark:text-green-200 space-y-1">
-                  <li>• Your balance is encrypted and only visible to you</li>
-                  <li>• Use these tokens to test transfers and unwraps</li>
-                  <li>• All operations maintain complete privacy</li>
+                  <li>• Use these tokens to wrap into confidential tokens</li>
+                  <li>• Standard ERC20 tokens for testing</li>
+                  <li>• Can be wrapped 1:1 into confidential USD</li>
                 </ul>
               </div>
             </div>
@@ -124,11 +118,11 @@ export default function FaucetPage() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span>Token Symbol:</span>
-                  <span className="font-semibold">cUSD</span>
+                  <span className="font-semibold">USD</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Token Name:</span>
-                  <span className="font-semibold">Confidential USD</span>
+                  <span className="font-semibold">USD Token</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Network:</span>
@@ -136,10 +130,7 @@ export default function FaucetPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>Max Claim:</span>
-                  <span className="font-semibold flex items-center gap-1">
-                    <Shield className="h-3 w-3" />
-                    10 cUSD
-                  </span>
+                  <span className="font-semibold">10 USD</span>
                 </div>
               </div>
             </div>
@@ -172,16 +163,16 @@ export default function FaucetPage() {
 
               <div>
                 <h3 className="text-xl font-semibold mb-2">
-                  Claim Your cUSD
+                  Claim USD Tokens
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Get confidential USD to explore FHE functionality
+                  Get USD tokens to wrap into confidential tokens
                 </p>
               </div>
 
               <div className="w-full max-w-md mx-auto">
                 <label htmlFor="amount" className="block text-sm font-medium mb-2 text-left">
-                  Amount (max 10 cUSD)
+                  Amount (max 10 USD)
                 </label>
                 <input
                   id="amount"
@@ -211,33 +202,17 @@ export default function FaucetPage() {
                   isInitiating ? 'scale-95 opacity-75' : ''
                 }`}
               >
-                {isFHELoading
-                  ? 'Initializing FHE...'
-                  : isInitiating
+                {isInitiating
                   ? 'Preparing Transaction...'
                   : isMintLoading
                   ? 'Claiming...'
-                  : `Claim ${amount || '0'} Confidential USDs`}
+                  : `Claim ${amount || '0'} USD`}
               </button>
 
-              {isFHELoading && (
-                <p className="text-center text-sm text-blue-600 dark:text-blue-400">
-                  Initializing FHE encryption... Please wait.
-                </p>
-              )}
-
-              {isFHEReady && !isConnected && (
+              {!isConnected && (
                 <p className="text-center text-sm text-red-600 dark:text-red-400">
-                  Please connect your wallet to the Sepolia network to claim
-                  tokens
+                  Please connect your wallet to the Sepolia network to claim tokens
                 </p>
-              )}
-
-              {fheError && (
-                <div className="flex items-center justify-center gap-2 text-center text-sm text-red-600 dark:text-red-400">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>FHE Error: {fheError}</span>
-                </div>
               )}
 
               {mintError && (
@@ -250,7 +225,7 @@ export default function FaucetPage() {
               {isConfirmed && (
                 <div className="flex items-center justify-center gap-2 text-center text-sm text-green-600 dark:text-green-400">
                   <CheckCircle className="h-4 w-4" />
-                  <span>Successfully claimed {amount} Confidential USDs!</span>
+                  <span>Successfully claimed {amount} USD!</span>
                 </div>
               )}
             </div>

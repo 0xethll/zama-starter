@@ -75,11 +75,18 @@ export default function WrapPage() {
         }
     }, [isApprovalConfirmed, refetchAllowance])
 
+    // Reset preparing state when unwrap completes or errors
+    useEffect(() => {
+        if (isUnwrapConfirmed || unwrapError) {
+            setIsPreparingUnwrap(false)
+        }
+    }, [isUnwrapConfirmed, unwrapError])
+
     const handleApprove = async () => {
         if (!wrapAmount || !isConnected) return
 
         try {
-            await approveTokens(wrapAmount)
+            approveTokens(wrapAmount)
         } catch (error) {
             console.error('Approval error:', error)
         }
@@ -89,7 +96,7 @@ export default function WrapPage() {
         if (!wrapAmount || !isConnected) return
 
         try {
-            await wrapTokens(wrapAmount)
+            wrapTokens(wrapAmount)
             setWrapAmount('')
         } catch (error) {
             console.error('Wrap error:', error)
@@ -97,8 +104,6 @@ export default function WrapPage() {
     }
 
     const handleUnwrap = async () => {
-        setIsPreparingUnwrap(true)
-
         if (
             !unwrapAmount ||
             !isConnected ||
@@ -106,9 +111,10 @@ export default function WrapPage() {
             !fheInstance ||
             !address
         ) {
-            setIsPreparingUnwrap(false)
             return
         }
+
+        setIsPreparingUnwrap(true)
 
         try {
             // Convert amount to wei (6 decimals)
@@ -122,14 +128,14 @@ export default function WrapPage() {
                 amountWei,
             )
 
-            await unwrapTokens(
+            unwrapTokens(
                 toHex(handle) as `0x${string}`,
                 toHex(proof) as `0x${string}`,
             )
             setUnwrapAmount('')
+            setIsPreparingUnwrap(false)
         } catch (error) {
             console.error('Unwrap error:', error)
-        } finally {
             setIsPreparingUnwrap(false)
         }
     }

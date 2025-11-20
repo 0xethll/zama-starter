@@ -17,7 +17,7 @@ import {ERC7984ERC20Wrapper} from "@openzeppelin/confidential-contracts/contract
 contract ConfidentialUSDX402 is ZamaEthereumConfig, ERC7984ERC20Wrapper, EIP712{
     using ECDSA for bytes32;
 
-    uint64 public constant MAX_MINT_AMOUNT = 10_000_000;
+    // uint64 public constant MAX_MINT_AMOUNT = 10_000_000;
 
     // Modified EIP-712 type hash (excluding value)
     bytes32 public constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH =
@@ -54,16 +54,16 @@ contract ConfidentialUSDX402 is ZamaEthereumConfig, ERC7984ERC20Wrapper, EIP712{
         facilitator = _facilitator;
     }
 
-    function mint(
-        address to,
-        externalEuint64 amount,
-        bytes memory inputProof
-    ) public {
-        euint64 max = FHE.asEuint64(MAX_MINT_AMOUNT);
-        euint64 eAmount = FHE.fromExternal(amount, inputProof);
-        eAmount = FHE.select(FHE.lt(eAmount, max), eAmount, max);
-        _mint(to, eAmount);
-    }
+    // function mint(
+    //     address to,
+    //     externalEuint64 amount,
+    //     bytes memory inputProof
+    // ) public {
+    //     euint64 max = FHE.asEuint64(MAX_MINT_AMOUNT);
+    //     euint64 eAmount = FHE.fromExternal(amount, inputProof);
+    //     eAmount = FHE.select(FHE.lt(eAmount, max), eAmount, max);
+    //     _mint(to, eAmount);
+    // }
 
     /**
      * @notice X402 compatible fully privacy-authorized transfers
