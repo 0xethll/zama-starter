@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: indexer
+networks:
+- id: 11155111
+  start_block: 0
+  contracts:
+  - name: ConfidentialUSDX402
+    address:
+    - 0xdCE9Fa07b2ad32D2E6C8051A895262C9914E9445
+    handler: src/EventHandlers.ts
+    events:
+    - event: ConfidentialTransfer(address indexed from, address indexed to, bytes32 indexed amount)
+    - event: UnwrapFinalized(address indexed receiver, bytes32 encryptedAmount, uint64 cleartextAmount)
+    - event: UnwrapRequested(address indexed receiver, bytes32 amount)
+unordered_multichain_mode: true
+preload_handlers: true

@@ -1,0 +1,20 @@
+type ConfidentialUSDX402_ConfidentialTransfer {
+  id: ID!
+  from: String!
+  to: String!
+  amount: String!
+}
+
+type ConfidentialUSDX402_UnwrapFinalized {
+  id: ID!
+  receiver: String!
+  encryptedAmount: String!
+  cleartextAmount: BigInt!
+}
+
+type ConfidentialUSDX402_UnwrapRequested {
+  id: ID!
+  receiver: String!
+  amount: String!
+}
+
