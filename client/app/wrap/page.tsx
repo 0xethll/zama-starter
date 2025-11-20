@@ -25,6 +25,7 @@ import { encryptUint64 } from '@/lib/fhe'
 import { toHex } from 'viem'
 import { CONTRACTS } from '@/lib/contracts'
 import { formatTokenAmount } from '@/lib/fhe'
+import { UnwrapRequestsList } from '@/components/UnwrapRequestsList'
 
 export default function WrapPage() {
     const { address, isConnected } = useAccount()
@@ -480,6 +481,13 @@ export default function WrapPage() {
                             )}
                         </div>
                     </div>
+
+                    {/* Unwrap Requests List */}
+                    {isConnected && (
+                        <div className="mt-8">
+                            <UnwrapRequestsList />
+                        </div>
+                    )}
                 </div>
             </div>
         </AppLayout>
