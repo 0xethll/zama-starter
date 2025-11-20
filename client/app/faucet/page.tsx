@@ -1,7 +1,7 @@
 'use client'
 
 import { AppLayout } from '@/components/AppLayout'
-import { useState } from 'react'
+
 import {
   Coins,
   Shield,
@@ -11,8 +11,10 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { useAccount } from 'wagmi'
-import { useFaucetData, useFaucetMint, useUsdFaucetData, useUsdFaucetMint } from '@/hooks/useFaucetContract'
+import { cUSDMint } from '@/hooks/useFaucetContract'
 import { useFHEContext } from '@/contexts/FHEContext'
+import { useState } from 'react'
+import { parseTokenAmount } from '@/lib/fhe'
 
 export default function FaucetPage() {
   const { address, isConnected } = useAccount()
@@ -21,42 +23,65 @@ export default function FaucetPage() {
     fheError,
   } = useFHEContext()
   const isFHELoading = !isFHEReady && !fheError
-  const { canClaim, timeUntilNextClaim, lastClaimDate } = useFaucetData()
   const {
-    mintFaucetTokens,
+    mintcUSD,
     isLoading: isMintLoading,
     isInitiating,
     isConfirmed,
     error: mintError,
     canMint,
-  } = useFaucetMint()
+  } = cUSDMint()
 
-  // USD token faucet
-  const { canClaim: canClaimUsd, timeUntilNextClaim: timeUntilNextClaimUsd, lastClaimDate: lastClaimDateUsd } = useUsdFaucetData()
-  const {
-    mintUsdTokens,
-    isLoading: isMintLoadingUsd,
-    isInitiating: isInitiatingUsd,
-    isConfirmed: isConfirmedUsd,
-    error: mintErrorUsd,
-    canMint: canMintUsd,
-  } = useUsdFaucetMint()
+  const [amount, setAmount] = useState('10')
+  const [amountError, setAmountError] = useState('')
 
-  const handleClaimTokens = async () => {
-    try {
-      await mintFaucetTokens()
-    } catch (error) {
-      console.error('Claim error:', error)
-      alert(error instanceof Error ? error.message : 'Failed to claim tokens')
+  const validateAmount = (value: string): boolean => {
+    setAmountError('')
+
+    if (!value || value.trim() === '') {
+      setAmountError('Amount is required')
+      return false
+    }
+
+    const numValue = parseFloat(value)
+    if (isNaN(numValue)) {
+      setAmountError('Invalid amount')
+      return false
+    }
+
+    if (numValue <= 0) {
+      setAmountError('Amount must be greater than 0')
+      return false
+    }
+
+    if (numValue > 10) {
+      setAmountError('Amount must be less than or equal to 10')
+      return false
+    }
+
+    return true
+  }
+
+  const handleAmountChange = (value: string) => {
+    setAmount(value)
+    if (value) {
+      validateAmount(value)
+    } else {
+      setAmountError('')
     }
   }
 
-  const handleClaimUsdTokens = async () => {
+  const handleClaimTokens = async () => {
     try {
-      await mintUsdTokens()
+      if (!validateAmount(amount)) {
+        return
+      }
+
+      const amountBigInt = parseTokenAmount(amount)
+      await mintcUSD(amountBigInt)
     } catch (error) {
-      console.error('USD Claim error:', error)
-      alert(error instanceof Error ? error.message : 'Failed to claim USD tokens')
+      console.error('Claim error:', error)
+      alert(error instanceof Error ? error.message : 'Failed to claim tokens')
     }
   }
 
@@ -70,7 +95,7 @@ export default function FaucetPage() {
               Token Faucets
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Claim test tokens for confidential FHE operations and regular ERC20 transactions
+              Claim Confidential USD for confidential FHE operations and regular ERC20 transactions
             </p>
           </div>
 
@@ -79,14 +104,11 @@ export default function FaucetPage() {
               <Info className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-green-900 dark:text-green-100 mb-2">
-                  Confidential Test Tokens
+                  Confidential USD
                 </h3>
                 <ul className="text-sm text-green-800 dark:text-green-200 space-y-1">
-                  <li>
-                    • Receive 1000 confidential test tokens every 24 hours
-                  </li>
                   <li>• Your balance is encrypted and only visible to you</li>
-                  <li>• Use these tokens to test transfers and swaps</li>
+                  <li>• Use these tokens to test transfers and unwraps</li>
                   <li>• All operations maintain complete privacy</li>
                 </ul>
               </div>
@@ -102,26 +124,22 @@ export default function FaucetPage() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span>Token Symbol:</span>
-                  <span className="font-semibold">CFDT</span>
+                  <span className="font-semibold">cUSD</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Token Name:</span>
-                  <span className="font-semibold">Confidential Token</span>
+                  <span className="font-semibold">Confidential USD</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Network:</span>
                   <span className="font-semibold">Sepolia Testnet</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Claim Amount:</span>
+                  <span>Max Claim:</span>
                   <span className="font-semibold flex items-center gap-1">
                     <Shield className="h-3 w-3" />
-                    1,000 CFDT
+                    10 cUSD
                   </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Cooldown:</span>
-                  <span className="font-semibold">24 hours</span>
                 </div>
               </div>
             </div>
@@ -140,31 +158,6 @@ export default function FaucetPage() {
                       : 'Not connected'}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Last Claim:</span>
-                  <span className="font-semibold">
-                    {lastClaimDate
-                      ? lastClaimDate.toLocaleDateString()
-                      : 'Never'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Can Claim:</span>
-                  <span
-                    className={`font-semibold flex items-center gap-1 ${
-                      canClaim
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-yellow-600 dark:text-yellow-400'
-                    }`}
-                  >
-                    {canClaim ? (
-                      <CheckCircle className="h-4 w-4" />
-                    ) : (
-                      <Clock className="h-4 w-4" />
-                    )}
-                    {canClaim ? 'Yes' : 'Cooldown active'}
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -179,17 +172,40 @@ export default function FaucetPage() {
 
               <div>
                 <h3 className="text-xl font-semibold mb-2">
-                  Claim Your Test Tokens
+                  Claim Your cUSD
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Get confidential test tokens to explore FHE functionality
+                  Get confidential USD to explore FHE functionality
                 </p>
+              </div>
+
+              <div className="w-full max-w-md mx-auto">
+                <label htmlFor="amount" className="block text-sm font-medium mb-2 text-left">
+                  Amount (max 10 cUSD)
+                </label>
+                <input
+                  id="amount"
+                  type="number"
+                  value={amount}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  placeholder="Enter amount"
+                  min="0"
+                  max="10"
+                  step="0.000001"
+                  disabled={!isConnected || isMintLoading}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                {amountError && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1 text-left">
+                    {amountError}
+                  </p>
+                )}
               </div>
 
               <button
                 onClick={handleClaimTokens}
                 disabled={
-                  !isConnected || !canClaim || isMintLoading || !canMint
+                  !isConnected || isMintLoading || !canMint || !!amountError || !amount
                 }
                 className={`w-full primary-bg text-white py-3 px-6 rounded-md font-medium hover:opacity-90 active:scale-95 active:opacity-75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${
                   isInitiating ? 'scale-95 opacity-75' : ''
@@ -201,7 +217,7 @@ export default function FaucetPage() {
                   ? 'Preparing Transaction...'
                   : isMintLoading
                   ? 'Claiming...'
-                  : 'Claim 1,000 Confidential Tokens'}
+                  : `Claim ${amount || '0'} Confidential USDs`}
               </button>
 
               {isFHELoading && (
@@ -214,13 +230,6 @@ export default function FaucetPage() {
                 <p className="text-center text-sm text-red-600 dark:text-red-400">
                   Please connect your wallet to the Sepolia network to claim
                   tokens
-                </p>
-              )}
-
-              {isConnected && !canClaim && (
-                <p className="text-center text-sm text-yellow-600 dark:text-yellow-400">
-                  You can claim tokens again in{' '}
-                  {Math.ceil(timeUntilNextClaim / (60 * 60 * 1000))} hours
                 </p>
               )}
 
@@ -241,154 +250,7 @@ export default function FaucetPage() {
               {isConfirmed && (
                 <div className="flex items-center justify-center gap-2 text-center text-sm text-green-600 dark:text-green-400">
                   <CheckCircle className="h-4 w-4" />
-                  <span>Successfully claimed 1,000 confidential tokens!</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* USD Token Section */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 mt-8">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <Coins className="h-6 w-6 text-blue-600" />
-                USD Test Token Faucet
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                Claim standard ERC20 test tokens (USD) for regular blockchain operations
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Info className="h-5 w-5 text-blue-600" />
-                  Token Details
-                </h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span>Token Symbol:</span>
-                    <span className="font-semibold">USD</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Token Type:</span>
-                    <span className="font-semibold">Standard ERC20</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Network:</span>
-                    <span className="font-semibold">Sepolia Testnet</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Claim Amount:</span>
-                    <span className="font-semibold">1,000 USD</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Cooldown:</span>
-                    <span className="font-semibold">24 hours</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  USD Claim Status
-                </h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span>Wallet:</span>
-                    <span className="font-mono">
-                      {address
-                        ? `${address.slice(0, 6)}...${address.slice(-4)}`
-                        : 'Not connected'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Last Claim:</span>
-                    <span className="font-semibold">
-                      {lastClaimDateUsd
-                        ? lastClaimDateUsd.toLocaleDateString()
-                        : 'Never'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Can Claim:</span>
-                    <span
-                      className={`font-semibold flex items-center gap-1 ${
-                        canClaimUsd
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-yellow-600 dark:text-yellow-400'
-                      }`}
-                    >
-                      {canClaimUsd ? (
-                        <CheckCircle className="h-4 w-4" />
-                      ) : (
-                        <Clock className="h-4 w-4" />
-                      )}
-                      {canClaimUsd ? 'Yes' : 'Cooldown active'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="flex justify-center">
-                <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-full">
-                  <Coins className="h-12 w-12 text-blue-600" />
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-semibold mb-2">
-                  Claim USD Test Tokens
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Get standard ERC20 tokens for testing regular blockchain operations
-                </p>
-              </div>
-
-              <button
-                onClick={handleClaimUsdTokens}
-                disabled={
-                  !isConnected || !canClaimUsd || isMintLoadingUsd || !canMintUsd
-                }
-                className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-medium hover:opacity-90 active:scale-95 active:opacity-75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${
-                  isInitiatingUsd ? 'scale-95 opacity-75' : ''
-                }`}
-              >
-                {isInitiatingUsd
-                  ? 'Preparing Transaction...'
-                  : isMintLoadingUsd
-                  ? 'Claiming...'
-                  : 'Claim 1,000 USD Tokens'}
-              </button>
-
-              {!isConnected && !isFHELoading && (
-                <p className="text-center text-sm text-red-600 dark:text-red-400">
-                  Please connect your wallet to the Sepolia network to claim
-                  tokens
-                </p>
-              )}
-
-              {isConnected && !canClaimUsd && (
-                <p className="text-center text-sm text-yellow-600 dark:text-yellow-400">
-                  You can claim USD tokens again in{' '}
-                  {Math.ceil(timeUntilNextClaimUsd / (60 * 60 * 1000))} hours
-                </p>
-              )}
-
-              {mintErrorUsd && (
-                <div className="flex items-center justify-center gap-2 text-center text-sm text-red-600 dark:text-red-400">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>{mintErrorUsd}</span>
-                </div>
-              )}
-
-              {isConfirmedUsd && (
-                <div className="flex items-center justify-center gap-2 text-center text-sm text-green-600 dark:text-green-400">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Successfully claimed 1,000 USD tokens!</span>
+                  <span>Successfully claimed {amount} Confidential USDs!</span>
                 </div>
               )}
             </div>

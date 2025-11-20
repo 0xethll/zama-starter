@@ -18,7 +18,7 @@ import {
     useUsdAllowance,
     useUsdApproval,
 } from '@/hooks/useWrapUnwrap'
-import { useUsdBalance, useWrappedTokenBalance } from '@/hooks/useTokenContract'
+import { useUsdBalance, useCUSDBalance } from '@/hooks/useTokenContract'
 import { useFHEContext } from '@/contexts/FHEContext'
 import { formatUnits, parseUnits } from 'viem'
 import { encryptUint64 } from '@/lib/fhe'
@@ -29,17 +29,14 @@ import { formatTokenAmount } from '@/lib/fhe'
 export default function WrapPage() {
     const { address, isConnected } = useAccount()
     const { balance: usdBalance, refetch: refetchUsdBalance } = useUsdBalance()
-    const { refetch: refetchWrappedBalance } = useWrappedTokenBalance()
+    const { encryptedBalance: cUSDBalance, refetch: refetchCUSDBalance } = useCUSDBalance()
     const { allowance: usdAllowance, refetchAllowance } = useUsdAllowance()
     const {
         isFHEReady,
         fheInstance,
         fheError,
-        wrappedEncryptedBalance,
-        wrappedDecryptedBalance,
-        isWrappedBalanceVisible,
-        setIsWrappedBalanceVisible,
-        setWrappedDecryptedBalance,
+        isBalanceVisible,
+        decryptedBalance
     } = useFHEContext()
 
     const [wrapAmount, setWrapAmount] = useState('')
@@ -120,7 +117,7 @@ export default function WrapPage() {
             // Encrypt the amount
             const { handle, proof } = await encryptUint64(
                 fheInstance,
-                CONTRACTS.WRAPPER_TOKEN.address,
+                CONTRACTS.cUSD_ERC7984.address,
                 address,
                 amountWei,
             )
@@ -139,8 +136,8 @@ export default function WrapPage() {
 
     const maxWrapAmount = usdBalance ? formatUnits(usdBalance, 6) : '0'
     const maxUnwrapAmount =
-        isWrappedBalanceVisible && wrappedDecryptedBalance !== null
-            ? formatTokenAmount(wrappedDecryptedBalance)
+        isBalanceVisible && cUSDBalance !== null && decryptedBalance
+            ? formatTokenAmount(decryptedBalance)
             : '0'
 
     // Check if we have sufficient allowance for wrapping
@@ -170,7 +167,7 @@ export default function WrapPage() {
         unwrapAmount &&
         parseFloat(unwrapAmount) > 0 &&
         parseFloat(unwrapAmount) <= parseFloat(maxUnwrapAmount) &&
-        wrappedEncryptedBalance
+        cUSDBalance
 
     return (
         <AppLayout>
@@ -197,12 +194,12 @@ export default function WrapPage() {
                                 <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
                                     <li>
                                         • <strong>Wrap:</strong> Convert USD
-                                        tokens to confidential wrapped tokens
+                                        tokens to Confidential USD tokens
                                         (1:1 ratio)
                                     </li>
                                     <li>
                                         • <strong>Unwrap:</strong> Convert
-                                        wrapped tokens back to regular USD
+                                        Confidential USD tokens back to regular USD
                                         tokens
                                     </li>
                                     <li>
@@ -237,18 +234,18 @@ export default function WrapPage() {
                         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
                             <h3 className="font-semibold mb-4 flex items-center gap-2">
                                 <Shield className="h-5 w-5 text-purple-500" />
-                                Wrapped USD Balance
+                                Confidential USD Balance
                             </h3>
                             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                {isWrappedBalanceVisible &&
-                                wrappedDecryptedBalance !== null
+                                {isBalanceVisible &&
+                                decryptedBalance !== null
                                     ? `${formatTokenAmount(
-                                          wrappedDecryptedBalance,
-                                      )} WUSD`
-                                    : '****** WUSD'}
+                                          decryptedBalance,
+                                      )} cUSD`
+                                    : '****** cUSD'}
                             </div>
                             <div className="text-sm text-gray-500 mt-1">
-                                {isWrappedBalanceVisible
+                                {isBalanceVisible
                                     ? 'Available to unwrap'
                                     : 'Decrypt to view'}
                             </div>
@@ -262,7 +259,7 @@ export default function WrapPage() {
                             Wrap USD Tokens
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400 mb-4">
-                            Convert your USD tokens to confidential wrapped
+                            Convert your USD tokens to confidential USD
                             tokens
                         </p>
 
@@ -369,7 +366,7 @@ export default function WrapPage() {
                             Unwrap to USD Tokens
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400 mb-4">
-                            Convert your wrapped confidential tokens back to
+                            Convert your wrapped Confidential USD tokens back to
                             regular USD tokens
                         </p>
 
@@ -395,14 +392,14 @@ export default function WrapPage() {
                                             setUnwrapAmount(maxUnwrapAmount)
                                         }
                                         className="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 text-sm font-medium"
-                                        disabled={!isWrappedBalanceVisible}
+                                        disabled={!isBalanceVisible}
                                     >
                                         MAX
                                     </button>
                                 </div>
                                 <div className="text-xs text-gray-500 mt-1">
-                                    {isWrappedBalanceVisible
-                                        ? `Balance: ${maxUnwrapAmount} WUSD`
+                                    {isBalanceVisible
+                                        ? `Balance: ${maxUnwrapAmount} cUSD`
                                         : 'Decrypt wrapped balance to view available amount'}
                                 </div>
                             </div>
@@ -445,8 +442,8 @@ export default function WrapPage() {
 
                             {isConnected &&
                                 isFHEReady &&
-                                wrappedEncryptedBalance &&
-                                !isWrappedBalanceVisible &&
+                                cUSDBalance &&
+                                !isBalanceVisible &&
                                 unwrapAmount && (
                                     <p className="text-center text-sm text-amber-600 dark:text-amber-400">
                                         Please decrypt your wrapped balance

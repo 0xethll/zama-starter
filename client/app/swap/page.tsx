@@ -59,7 +59,7 @@ export default function SwapPage() {
             <div className="mb-8">
               <h1 className="text-3xl font-bold mb-4 flex items-center gap-2">
                 <Repeat2 className="h-8 w-8 primary-accent" />
-                Confidential Token Swap
+                Confidential USD Swap
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
                 Swap tokens without revealing trade amounts or directions

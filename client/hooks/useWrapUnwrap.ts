@@ -10,7 +10,7 @@ import {
 import { CONTRACTS } from '@/lib/contracts'
 import { parseUnits } from 'viem'
 
-import { useUsdBalance, useWrappedTokenBalance } from './useTokenContract'
+import { useUsdBalance, useCUSDBalance } from './useTokenContract'
 
 /**
  * Hook to check USD token allowance for wrapper contract
@@ -22,7 +22,7 @@ export function useUsdAllowance() {
         address: CONTRACTS.USD_ERC20.address,
         abi: CONTRACTS.USD_ERC20.abi,
         functionName: 'allowance',
-        args: address ? [address, CONTRACTS.WRAPPER_TOKEN.address] : undefined,
+        args: address ? [address, CONTRACTS.cUSD_ERC7984.address] : undefined,
         query: {
             enabled: !!address,
         },
@@ -59,7 +59,7 @@ export function useUsdApproval() {
                 address: CONTRACTS.USD_ERC20.address,
                 abi: CONTRACTS.USD_ERC20.abi,
                 functionName: 'approve',
-                args: [CONTRACTS.WRAPPER_TOKEN.address, amountWei],
+                args: [CONTRACTS.cUSD_ERC7984.address, amountWei],
             })
         } catch (err) {
             console.error('Approval error:', err)
@@ -94,7 +94,7 @@ export function useUsdApproval() {
 }
 
 /**
- * Hook for wrapping USD tokens to wrapped confidential tokens
+ * Hook for wrapping USD tokens to wrapped Confidential USDs
  */
 export function useWrapToken() {
     const { address } = useAccount()
@@ -104,7 +104,7 @@ export function useWrapToken() {
     const { writeContract, data: hash, error, reset } = useWriteContract()
 
     const { refetch: refetchUsdBalance } = useUsdBalance()
-    const { refetch: refetchWrappedTokenBalance } = useWrappedTokenBalance()
+    const { refetch: refetchCUSDBalance } = useCUSDBalance()
 
     const { isLoading: isConfirming, isSuccess: isConfirmed } =
         useWaitForTransactionReceipt({
@@ -121,8 +121,8 @@ export function useWrapToken() {
             const amountWei = parseUnits(amount, 6) // USD token has 6 decimals
 
             await writeContract({
-                address: CONTRACTS.WRAPPER_TOKEN.address,
-                abi: CONTRACTS.WRAPPER_TOKEN.abi,
+                address: CONTRACTS.cUSD_ERC7984.address,
+                abi: CONTRACTS.cUSD_ERC7984.abi,
                 functionName: 'wrap',
                 args: [address, amountWei],
             })
@@ -140,14 +140,14 @@ export function useWrapToken() {
         if (isConfirmed || (error && !isConfirming)) {
             setIsWrapping(false)
             refetchUsdBalance()
-            refetchWrappedTokenBalance()
+            refetchCUSDBalance()
         }
     }, [
         isConfirmed,
         error,
         isConfirming,
         refetchUsdBalance,
-        refetchWrappedTokenBalance,
+        refetchCUSDBalance,
     ])
 
     const resetWrap = () => {
@@ -167,7 +167,7 @@ export function useWrapToken() {
 }
 
 /**
- * Hook for unwrapping confidential tokens back to USD tokens
+ * Hook for unwrapping Confidential USDs back to USD tokens
  */
 export function useUnwrapToken() {
     const { address } = useAccount()
@@ -177,7 +177,7 @@ export function useUnwrapToken() {
     const { writeContract, data: hash, error, reset } = useWriteContract()
 
     const { refetch: refetchUsdBalance } = useUsdBalance()
-    const { refetch: refetchWrappedTokenBalance } = useWrappedTokenBalance()
+    const { refetch: refetchCUSDBalance } = useCUSDBalance()
 
     const { isLoading: isConfirming, isSuccess: isConfirmed } =
         useWaitForTransactionReceipt({
@@ -195,8 +195,8 @@ export function useUnwrapToken() {
             setUnwrapError(null)
 
             await writeContract({
-                address: CONTRACTS.WRAPPER_TOKEN.address,
-                abi: CONTRACTS.WRAPPER_TOKEN.abi,
+                address: CONTRACTS.cUSD_ERC7984.address,
+                abi: CONTRACTS.cUSD_ERC7984.abi,
                 functionName: 'unwrap',
                 args: [address, address, encryptedAmount, inputProof],
             })
@@ -213,9 +213,9 @@ export function useUnwrapToken() {
     useEffect(() => {
         if (isConfirmed || (error && !isConfirming)) {
             setIsUnwrapping(false)
-            refetchWrappedTokenBalance()
+            refetchCUSDBalance()
         }
-    }, [isConfirmed, error, isConfirming, refetchWrappedTokenBalance])
+    }, [isConfirmed, error, isConfirming, refetchCUSDBalance])
 
     const resetUnwrap = () => {
         setUnwrapError(null)

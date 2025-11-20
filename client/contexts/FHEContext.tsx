@@ -14,8 +14,7 @@ import { Signer } from 'ethers'
 import { getEthersSigner } from '@/lib/client-to-signer'
 import { initializeFHE, createFHEInstance } from '@/lib/fhe'
 import {
-    useConfidentialBalance,
-    useWrappedTokenBalance,
+    useCUSDBalance,
 } from '@/hooks/useTokenContract'
 import { useConfig } from 'wagmi'
 import type { FhevmInstance } from '@zama-fhe/relayer-sdk/bundle'
@@ -100,16 +99,9 @@ interface FHEContextType {
     decryptedBalance: bigint | null
     isBalanceVisible: boolean
 
-    // Wrapped token balance state
-    wrappedEncryptedBalance: `0x${string}` | undefined
-    wrappedDecryptedBalance: bigint | null
-    isWrappedBalanceVisible: boolean
-
     // Balance actions
     setDecryptedBalance: (balance: bigint | null) => void
     setIsBalanceVisible: (visible: boolean) => void
-    setWrappedDecryptedBalance: (balance: bigint | null) => void
-    setIsWrappedBalanceVisible: (visible: boolean) => void
 }
 
 const FHEContext = createContext<FHEContextType | null>(null)
@@ -121,20 +113,14 @@ interface FHEProviderProps {
 export function FHEProvider({ children }: FHEProviderProps) {
     const { address, connector, isConnected } = useAccount()
     const config = useConfig()
-    const { encryptedBalance } = useConfidentialBalance()
-    const { encryptedBalance: wrappedEncryptedBalance } =
-        useWrappedTokenBalance()
+    const { encryptedBalance } = useCUSDBalance()
 
     const [signer, setSigner] = useState<Signer | null>(null)
     const [decryptedBalance, setDecryptedBalance] = useState<bigint | null>(
         null,
     )
     const [isBalanceVisible, setIsBalanceVisible] = useState(false)
-    const [wrappedDecryptedBalance, setWrappedDecryptedBalance] = useState<
-        bigint | null
-    >(null)
-    const [isWrappedBalanceVisible, setIsWrappedBalanceVisible] =
-        useState(false)
+
     const [fheError, setFheError] = useState<string | null>(globalError)
     const isMountedRef = useRef(true)
 
@@ -211,8 +197,6 @@ export function FHEProvider({ children }: FHEProviderProps) {
     useEffect(() => {
         setDecryptedBalance(null)
         setIsBalanceVisible(false)
-        setWrappedDecryptedBalance(null)
-        setIsWrappedBalanceVisible(false)
     }, [address])
 
     // Clear decrypted balance when encrypted balance changes (after faucet/transfer)
@@ -223,14 +207,6 @@ export function FHEProvider({ children }: FHEProviderProps) {
         }
     }, [encryptedBalance])
 
-    // Clear wrapped decrypted balance when wrapped encrypted balance changes (after wrap/unwrap)
-    useEffect(() => {
-        if (isWrappedBalanceVisible) {
-            setWrappedDecryptedBalance(null)
-            setIsWrappedBalanceVisible(false)
-        }
-    }, [wrappedEncryptedBalance])
-
     const contextValue: FHEContextType = {
         isFHEReady: globalIsInitialized && !!globalFheInstance && !fheError,
         fheInstance: globalFheInstance,
@@ -240,13 +216,8 @@ export function FHEProvider({ children }: FHEProviderProps) {
         encryptedBalance,
         decryptedBalance,
         isBalanceVisible,
-        wrappedEncryptedBalance,
-        wrappedDecryptedBalance,
-        isWrappedBalanceVisible,
         setDecryptedBalance,
         setIsBalanceVisible,
-        setWrappedDecryptedBalance,
-        setIsWrappedBalanceVisible,
     }
 
     return (

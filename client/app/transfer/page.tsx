@@ -51,7 +51,7 @@ export default function TransferPage() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-4 flex items-center gap-2">
               <ArrowUpDown className="h-8 w-8 primary-accent" />
-              Confidential Token Transfer
+              Confidential USD Transfer
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Transfer tokens while keeping amounts completely private using FHE

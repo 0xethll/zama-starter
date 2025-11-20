@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Zama Learning Platform",
-  description: "Learn Zama FHE with confidential token transfers and swaps",
+  description: "Learn Zama FHE with Confidential USD transfers and swaps",
 };
 
 export default function RootLayout({

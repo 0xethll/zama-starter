@@ -20,21 +20,12 @@ export function TokenBalance() {
         encryptedBalance,
         decryptedBalance,
         isBalanceVisible,
-        wrappedEncryptedBalance,
-        wrappedDecryptedBalance,
-        isWrappedBalanceVisible,
         setDecryptedBalance,
         setIsBalanceVisible,
-        setWrappedDecryptedBalance,
-        setIsWrappedBalanceVisible,
     } = useFHEContext()
 
     const [isDecrypting, setIsDecrypting] = useState(false)
     const [decryptError, setDecryptError] = useState<string | null>(null)
-    const [isDecryptingWrapped, setIsDecryptingWrapped] = useState(false)
-    const [wrappedDecryptError, setWrappedDecryptError] = useState<
-        string | null
-    >(null)
 
     // USD balance
     const { balance: usdBalance } = useUsdBalance()
@@ -76,7 +67,6 @@ export function TokenBalance() {
     // Clear decrypt error when address changes
     useEffect(() => {
         setDecryptError(null)
-        setWrappedDecryptError(null)
     }, [address])
 
     // Clear decrypt error when encrypted balance changes
@@ -85,13 +75,6 @@ export function TokenBalance() {
             setDecryptError(null)
         }
     }, [encryptedBalance])
-
-    // Clear wrapped decrypt error when wrapped encrypted balance changes
-    useEffect(() => {
-        if (wrappedDecryptError) {
-            setWrappedDecryptError(null)
-        }
-    }, [wrappedEncryptedBalance])
 
     const decryptBalance = useCallback(async () => {
         if (
@@ -118,7 +101,7 @@ export function TokenBalance() {
                 balance = await decryptForUser(
                     fheInstance,
                     encryptedBalance as string,
-                    CONTRACTS.FAUCET_TOKEN.address,
+                    CONTRACTS.cUSD_ERC7984.address,
                     signer,
                 )
             }
@@ -135,65 +118,12 @@ export function TokenBalance() {
         }
     }, [address, encryptedBalance, isFHEReady, fheInstance, signer])
 
-    const decryptWrappedBalance = useCallback(async () => {
-        if (
-            !address ||
-            !wrappedEncryptedBalance ||
-            !isFHEReady ||
-            !fheInstance ||
-            !signer
-        ) {
-            return
-        }
-
-        setIsDecryptingWrapped(true)
-        setWrappedDecryptError(null)
-
-        try {
-            let balance
-            if (
-                wrappedEncryptedBalance ==
-                '0x0000000000000000000000000000000000000000000000000000000000000000'
-            ) {
-                balance = BigInt(0)
-            } else {
-                balance = await decryptForUser(
-                    fheInstance,
-                    wrappedEncryptedBalance as string,
-                    CONTRACTS.WRAPPER_TOKEN.address,
-                    signer,
-                )
-            }
-
-            console.log('wrapped balance', balance)
-
-            setWrappedDecryptedBalance(balance)
-            setIsWrappedBalanceVisible(true)
-        } catch (error) {
-            console.error('Error decrypting wrapped balance:', error)
-            setWrappedDecryptError(
-                'Failed to decrypt wrapped balance. Please try again.',
-            )
-        } finally {
-            setIsDecryptingWrapped(false)
-        }
-    }, [address, wrappedEncryptedBalance, isFHEReady, fheInstance, signer])
-
     const toggleBalanceVisibility = () => {
         if (isBalanceVisible) {
             setIsBalanceVisible(false)
             setDecryptedBalance(null)
         } else {
             decryptBalance()
-        }
-    }
-
-    const toggleWrappedBalanceVisibility = () => {
-        if (isWrappedBalanceVisible) {
-            setIsWrappedBalanceVisible(false)
-            setWrappedDecryptedBalance(null)
-        } else {
-            decryptWrappedBalance()
         }
     }
 
@@ -209,13 +139,13 @@ export function TokenBalance() {
                 Token Balances
             </div>
 
-            {/* Confidential Token Balance */}
+            {/* Confidential USD Balance */}
             <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                     <Coins className="h-4 w-4 text-green-500" />
                     <div className="flex flex-col">
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                            Confidential Token
+                            Confidential USD
                         </span>
                         <span className="text-sm font-medium">
                             {isBalanceVisible && decryptedBalance !== null
@@ -264,63 +194,9 @@ export function TokenBalance() {
                 </div>
             </div>
 
-            {/* Wrapped Confidential USD Token Balance */}
-            <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-purple-500" />
-                    <div className="flex flex-col">
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                            Wrapped USD Token
-                        </span>
-                        <span className="text-sm font-medium">
-                            {isWrappedBalanceVisible &&
-                            wrappedDecryptedBalance !== null
-                                ? formatTokenAmount(wrappedDecryptedBalance)
-                                : '******'}
-                        </span>
-                    </div>
-                </div>
-
-                <button
-                    onClick={toggleWrappedBalanceVisibility}
-                    disabled={
-                        isDecryptingWrapped ||
-                        !canDecrypt ||
-                        !wrappedEncryptedBalance
-                    }
-                    className={cn(
-                        'p-1.5 rounded-md transition-colors',
-                        'hover:bg-gray-100 dark:hover:bg-gray-700',
-                        'disabled:opacity-50 disabled:cursor-not-allowed',
-                    )}
-                    title={
-                        isWrappedBalanceVisible
-                            ? 'Hide wrapped balance'
-                            : !wrappedEncryptedBalance
-                            ? 'No wrapped tokens'
-                            : progress.currentStep?.label ||
-                              'Show wrapped balance'
-                    }
-                >
-                    {isDecryptingWrapped ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-                    ) : isWrappedBalanceVisible ? (
-                        <EyeOff className="h-4 w-4 text-gray-500" />
-                    ) : (
-                        <Eye className="h-4 w-4 text-gray-500" />
-                    )}
-                </button>
-            </div>
-
             {decryptError && (
                 <div className="text-xs text-red-500 dark:text-red-400">
                     {decryptError}
-                </div>
-            )}
-
-            {wrappedDecryptError && (
-                <div className="text-xs text-red-500 dark:text-red-400">
-                    {wrappedDecryptError}
                 </div>
             )}
 

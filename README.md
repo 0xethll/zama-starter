@@ -1,6 +1,6 @@
 # Zama Starter - A Practical FHE DApp
 
-This project demonstrates practical implementation of confidential token operations using Zama's Fully Homomorphic Encryption (FHE) technology. Building upon the OpenZeppelin Confidential Contracts v0.1.0 framework, it provides a seamless bridge between traditional ERC20 tokens and their confidential counterparts.
+This project demonstrates practical implementation of Confidential USD operations using Zama's Fully Homomorphic Encryption (FHE) technology. Building upon the OpenZeppelin Confidential Contracts v0.1.0 framework, it provides a seamless bridge between traditional ERC20 tokens and their confidential counterparts.
 
 ## Live Demo
 
@@ -8,8 +8,8 @@ This project demonstrates practical implementation of confidential token operati
 
 ## Key Features
 
--   **Confidential Token Wrapping/Unwrapping**: Secure conversion between public ERC20 tokens and confidential tokens while preserving privacy
--   **Private Token Transfers**: Execute confidential token transfers with encrypted balances and amounts
+-   **Confidential USD Wrapping/Unwrapping**: Secure conversion between public ERC20 tokens and Confidential USDs while preserving privacy
+-   **Private Token Transfers**: Execute Confidential USD transfers with encrypted balances and amounts
 -   **Optimized UX**: Extensive frontend optimizations and edge case testing to deliver a familiar Web3 experience for users accustomed to non-confidential dApps
 
 ## Technical Implementation

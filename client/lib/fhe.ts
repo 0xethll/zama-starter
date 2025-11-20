@@ -119,7 +119,11 @@ export async function decryptForUser(
     durationDays,
   )
 
-  return BigInt(ciphertextHandle)
+  const decryptedValue = result[ciphertextHandle as `0x${string}`]
+  if (typeof decryptedValue === 'bigint') {
+    return decryptedValue
+  }
+  return BigInt(decryptedValue)
 }
 
 /**

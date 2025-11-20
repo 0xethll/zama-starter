@@ -6,12 +6,12 @@ import { CONTRACTS } from '@/lib/contracts'
 /**
  * Hook to get confidential balance (returns encrypted handle)
  */
-export function useConfidentialBalance() {
+export function useCUSDBalance() {
     const { address } = useAccount()
 
     const { data: encryptedBalance, refetch } = useReadContract({
-        address: CONTRACTS.FAUCET_TOKEN.address,
-        abi: CONTRACTS.FAUCET_TOKEN.abi,
+        address: CONTRACTS.cUSD_ERC7984.address,
+        abi: CONTRACTS.cUSD_ERC7984.abi,
         functionName: 'confidentialBalanceOf',
         args: address ? [address] : undefined,
         query: {
@@ -48,24 +48,3 @@ export function useUsdBalance() {
     }
 }
 
-/**
- * Hook to get wrapped token confidential balance (returns encrypted handle)
- */
-export function useWrappedTokenBalance() {
-    const { address } = useAccount()
-
-    const { data: encryptedBalance, refetch } = useReadContract({
-        address: CONTRACTS.WRAPPER_TOKEN.address,
-        abi: CONTRACTS.WRAPPER_TOKEN.abi,
-        functionName: 'confidentialBalanceOf',
-        args: address ? [address] : undefined,
-        query: {
-            enabled: !!address,
-        },
-    })
-
-    return {
-        encryptedBalance,
-        refetch,
-    }
-}

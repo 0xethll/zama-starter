@@ -1,4 +1,4 @@
-// React hooks for confidential token transfers
+// React hooks for Confidential USD transfers
 
 import { useState, useMemo, useEffect } from 'react'
 import {
@@ -10,15 +10,15 @@ import { CONTRACTS } from '@/lib/contracts'
 import { useFHEContext } from '@/contexts/FHEContext'
 import { encryptUint64 } from '@/lib/fhe'
 import { toHex, isAddress } from 'viem'
-import { useConfidentialBalance } from './useTokenContract'
+import { useCUSDBalance } from './useTokenContract'
 
 /**
- * Hook to transfer confidential tokens
+ * Hook to transfer Confidential USDs
  */
 export function useTransferContract() {
   const { address, isConnected } = useAccount()
   const { isFHEReady, fheInstance } = useFHEContext()
-  const { refetch: refetchBalance } = useConfidentialBalance()
+  const { refetch: refetchBalance } = useCUSDBalance()
   const [isPreparingTx, setIsPreparingTx] = useState(false)
   const [isInitiating, setIsInitiating] = useState(false)
 
@@ -72,15 +72,15 @@ export function useTransferContract() {
       // Encrypt the transfer amount
       const { handle, proof } = await encryptUint64(
         fheInstance,
-        CONTRACTS.FAUCET_TOKEN.address,
+        CONTRACTS.cUSD_ERC7984.address,
         address,
         BigInt(amount * 1000000),
       )
 
       // Call the transfer function
       transferTokens({
-        address: CONTRACTS.FAUCET_TOKEN.address,
-        abi: CONTRACTS.FAUCET_TOKEN.abi,
+        address: CONTRACTS.cUSD_ERC7984.address,
+        abi: CONTRACTS.cUSD_ERC7984.abi,
         functionName: 'confidentialTransfer',
         args: [recipient, toHex(handle), toHex(proof)],
       })
