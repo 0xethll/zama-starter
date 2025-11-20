@@ -26,6 +26,7 @@ import { toHex } from 'viem'
 import { CONTRACTS } from '@/lib/contracts'
 import { formatTokenAmount } from '@/lib/fhe'
 import { UnwrapRequestsList } from '@/components/UnwrapRequestsList'
+import { useUnwrapRequests } from '@/hooks/useUnwrapRequests'
 
 export default function WrapPage() {
     const { address, isConnected } = useAccount()
@@ -39,6 +40,9 @@ export default function WrapPage() {
         isBalanceVisible,
         decryptedBalance
     } = useFHEContext()
+
+    // Fetch unwrap requests
+    const { requests: unwrapRequests, isLoading: isLoadingRequests, error: requestsError, refetch: refetchRequests } = useUnwrapRequests()
 
     const [wrapAmount, setWrapAmount] = useState('')
     const [unwrapAmount, setUnwrapAmount] = useState('')
@@ -66,7 +70,18 @@ export default function WrapPage() {
         isConfirmed: isUnwrapConfirmed,
         unwrapError,
         resetUnwrap,
-    } = useUnwrapToken()
+    } = useUnwrapToken(async () => {
+        // Wait for indexer to process the transaction
+        await new Promise(resolve => setTimeout(resolve, 3000))
+
+        // Refetch unwrap requests to show the newly created request
+        for (let i = 0; i < 3; i++) {
+            await refetchRequests()
+            if (i < 2) {
+                await new Promise(resolve => setTimeout(resolve, 2000))
+            }
+        }
+    })
 
     // Handle successful approval - refetch allowance to update needsApproval logic
     useEffect(() => {
@@ -485,7 +500,12 @@ export default function WrapPage() {
                     {/* Unwrap Requests List */}
                     {isConnected && (
                         <div className="mt-8">
-                            <UnwrapRequestsList />
+                            <UnwrapRequestsList
+                                requests={unwrapRequests}
+                                isLoading={isLoadingRequests}
+                                error={requestsError}
+                                refetch={refetchRequests}
+                            />
                         </div>
                     )}
                 </div>

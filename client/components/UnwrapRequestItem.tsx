@@ -4,12 +4,11 @@ import { formatUnits } from 'viem'
 import { Loader2, CheckCircle, Clock } from 'lucide-react'
 import { UnwrapRequest } from '@/hooks/useUnwrapRequests'
 
+
 interface UnwrapRequestItemProps {
     request: UnwrapRequest
     onFinalize: (
-        burntAmount: `0x${string}`,
-        cleartextAmount: bigint,
-        proof: `0x${string}`,
+        burntAmount: `0x${string}`
     ) => void
     isFinalizing: boolean
     pendingTx: string | null
@@ -26,23 +25,10 @@ export function UnwrapRequestItem({
     pendingTx,
 }: UnwrapRequestItemProps) {
     const isThisPending = pendingTx === request.burntAmount
-    const canFinalize = request.cleartextAmount && !request.isFinalized
+    const canFinalize = !request.isFinalized && !isFinalizing
 
-    const handleFinalize = () => {
-        if (!canFinalize) return
-
-        // TODO: Integrate with FHEVM Gateway to get the actual decryption proof
-        // For now, this is a placeholder that will fail if the proof is invalid
-        // You need to implement the gateway integration to retrieve:
-        // 1. The decrypted cleartext amount (already available from indexer)
-        // 2. The cryptographic proof that verifies the decryption is correct
-        const proof = '0x' as `0x${string}`
-
-        onFinalize(
-            request.burntAmount as `0x${string}`,
-            BigInt(request.cleartextAmount!),
-            proof,
-        )
+    const handleFinalize = async () =>  {
+        onFinalize(request.burntAmount as `0x${string}`)
     }
 
     return (
@@ -96,32 +82,27 @@ export function UnwrapRequestItem({
 
                 {/* Action button */}
                 <div className="ml-4">
-                    {request.cleartextAmount ? (
-                        <button
-                            onClick={handleFinalize}
-                            disabled={isFinalizing || !canFinalize}
-                            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
-                        >
-                            {isThisPending && isFinalizing ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Finalizing...
-                                </>
-                            ) : request.isFinalized ? (
-                                <>
-                                    <CheckCircle className="h-4 w-4" />
-                                    Finalized
-                                </>
-                            ) : (
-                                'Finalize'
-                            )}
-                        </button>
-                    ) : (
-                        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm">
-                            <Clock className="h-4 w-4 animate-pulse" />
-                            Decrypting...
-                        </div>
-                    )}
+                
+                    <button
+                        onClick={handleFinalize}
+                        disabled={isFinalizing || !canFinalize}
+                        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2"
+                    >
+                        {isThisPending ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Finalizing...
+                            </>
+                        ) : request.isFinalized ? (
+                            <>
+                                <CheckCircle className="h-4 w-4" />
+                                Finalized
+                            </>
+                        ) : (
+                            'Finalize'
+                        )}
+                    </button>
+                    
                 </div>
             </div>
         </div>

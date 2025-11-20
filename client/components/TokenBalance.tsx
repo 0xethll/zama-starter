@@ -16,6 +16,7 @@ export function TokenBalance() {
         isFHEReady,
         fheInstance,
         fheError,
+        retryFHE,
         signer,
         encryptedBalance,
         decryptedBalance,
@@ -105,8 +106,6 @@ export function TokenBalance() {
                     signer,
                 )
             }
-
-            console.log('balance', balance)
 
             setDecryptedBalance(balance)
             setIsBalanceVisible(true)
@@ -200,7 +199,25 @@ export function TokenBalance() {
                 </div>
             )}
 
-            {!canDecrypt && !isDecrypting && (
+            {fheError && (
+                <div className="p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-red-800 dark:text-red-200">
+                        <Shield className="h-4 w-4" />
+                        <span className="font-medium">FHE Initialization Failed</span>
+                    </div>
+                    <p className="text-xs text-red-700 dark:text-red-300">
+                        {fheError}
+                    </p>
+                    <button
+                        onClick={retryFHE}
+                        className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md transition-colors"
+                    >
+                        Retry Initialization
+                    </button>
+                </div>
+            )}
+
+            {!canDecrypt && !isDecrypting && !fheError && (
                 <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
                         <span className="text-gray-600 dark:text-gray-400">

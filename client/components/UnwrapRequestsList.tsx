@@ -1,24 +1,38 @@
 'use client'
 
-import { useUnwrapRequests } from '@/hooks/useUnwrapRequests'
+import { UnwrapRequest } from '@/hooks/useUnwrapRequests'
 import { useFinalizeUnwrap } from '@/hooks/useFinalizeUnwrap'
 import { UnwrapRequestItem } from './UnwrapRequestItem'
 import { Loader2, AlertCircle, ClipboardList } from 'lucide-react'
+
+interface UnwrapRequestsListProps {
+    requests: UnwrapRequest[]
+    isLoading: boolean
+    error?: string
+    refetch: () => void
+}
 
 /**
  * Component that displays a list of pending unwrap requests
  * Fetches data from Envio indexer and allows users to finalize requests
  */
-export function UnwrapRequestsList() {
-    const { requests, isLoading, error, refetch } = useUnwrapRequests()
+export function UnwrapRequestsList({ requests, isLoading, error, refetch }: UnwrapRequestsListProps) {
 
-    const { finalizeUnwrap, isFinalizing, pendingTx } = useFinalizeUnwrap(() => {
-        // Refetch requests after successful finalization
-        refetch()
+    const { finalizeUnwrap, isFinalizing, pendingTx } = useFinalizeUnwrap(async () => {
+        // Wait for indexer to process the transaction
+        await new Promise(resolve => setTimeout(resolve, 3000))
+
+        // Retry refetch multiple times to ensure indexer has updated
+        for (let i = 0; i < 3; i++) {
+            await refetch()
+            if (i < 2) {
+                await new Promise(resolve => setTimeout(resolve, 2000))
+            }
+        }
     })
 
-    // Loading state
-    if (isLoading) {
+    // Initial loading state (only show full spinner when no data)
+    if (isLoading && requests.length === 0) {
         return (
             <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
@@ -62,9 +76,17 @@ export function UnwrapRequestsList() {
                 </h3>
                 <button
                     onClick={() => refetch()}
-                    className="text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                    disabled={isLoading}
+                    className="text-sm text-purple-600 dark:text-purple-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                 >
-                    Refresh
+                    {isLoading ? (
+                        <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Refreshing...
+                        </>
+                    ) : (
+                        'Refresh'
+                    )}
                 </button>
             </div>
 

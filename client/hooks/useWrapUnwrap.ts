@@ -1,6 +1,6 @@
 // React hooks for wrap/unwrap operations
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
     useAccount,
     useWriteContract,
@@ -181,10 +181,16 @@ export function useWrapToken() {
 /**
  * Hook for unwrapping Confidential USDs back to USD tokens
  */
-export function useUnwrapToken() {
+export function useUnwrapToken(onSuccess?: () => void) {
     const { address } = useAccount()
     const [isUnwrapping, setIsUnwrapping] = useState(false)
     const [unwrapError, setUnwrapError] = useState<string | null>(null)
+
+    // Store onSuccess callback in ref to avoid it being a dependency
+    const onSuccessRef = useRef(onSuccess)
+    useEffect(() => {
+        onSuccessRef.current = onSuccess
+    }, [onSuccess])
 
     const { writeContract, data: hash, reset } = useWriteContract()
 
@@ -228,6 +234,7 @@ export function useUnwrapToken() {
             setIsUnwrapping(false)
             refetchCUSDBalance()
             refetchUsdBalance()
+            onSuccessRef.current?.()
         }
     }, [isConfirmed, refetchCUSDBalance, refetchUsdBalance])
 

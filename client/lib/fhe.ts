@@ -69,6 +69,21 @@ export async function encryptUint64(
   }
 }
 
+export async function decryptPublicly(
+  fheInstance: FhevmInstance,
+  ciphertext: string,
+): Promise<[bigint, `0x${string}`]> {
+
+  const {clearValues, decryptionProof} = await fheInstance.publicDecrypt([ciphertext])
+
+  const decryptedValue = clearValues[ciphertext as `0x${string}`]
+  if (typeof decryptedValue === 'bigint') {
+    return [decryptedValue, decryptionProof]
+  }
+  return [BigInt(decryptedValue), decryptionProof]
+}
+
+
 /**
  * Decrypt a ciphertext handle for the user
  * Requires user signature for authorization
