@@ -2,7 +2,7 @@
 name: indexer
 networks:
 - id: 11155111
-  start_block: 0
+  start_block: 9666221
   contracts:
   - name: ConfidentialUSDX402
     address:
@@ -12,5 +12,8 @@ networks:
     - event: ConfidentialTransfer(address indexed from, address indexed to, bytes32 indexed amount)
     - event: UnwrapFinalized(address indexed receiver, bytes32 encryptedAmount, uint64 cleartextAmount)
     - event: UnwrapRequested(address indexed receiver, bytes32 amount)
+field_selection:
+  transaction_fields:
+    - hash
 unordered_multichain_mode: true
 preload_handlers: true

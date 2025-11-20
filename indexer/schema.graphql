@@ -5,16 +5,17 @@ type ConfidentialUSDX402_ConfidentialTransfer {
   amount: String!
 }
 
-type ConfidentialUSDX402_UnwrapFinalized {
+type ConfidentialUSDX402_UnwrapRequest {
   id: ID!
-  receiver: String!
-  encryptedAmount: String!
-  cleartextAmount: BigInt!
-}
-
-type ConfidentialUSDX402_UnwrapRequested {
-  id: ID!
-  receiver: String!
-  amount: String!
+  burntAmount: String!
+  recipient: String!
+  requestBlockNumber: BigInt!
+  requestTransactionHash: String!
+  requestTimestamp: BigInt!
+  isFinalized: Boolean!
+  cleartextAmount: BigInt
+  finalizedBlockNumber: BigInt
+  finalizedTransactionHash: String
+  finalizedTimestamp: BigInt
 }
 
