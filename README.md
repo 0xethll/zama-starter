@@ -1,6 +1,6 @@
 # Zama Starter - A Practical FHE DApp
 
-This project demonstrates practical implementation of Confidential USD operations using Zama's Fully Homomorphic Encryption (FHE) technology. Building upon the OpenZeppelin Confidential Contracts v0.1.0 framework, it provides a seamless bridge between traditional ERC20 tokens and their confidential counterparts.
+This project demonstrates practical implementation of Confidential USD operations using Zama's Fully Homomorphic Encryption (FHE) technology. Building upon the OpenZeppelin ERC7984 Contracts, it provides a seamless bridge between traditional ERC20 tokens and their confidential counterparts.
 
 ## Live Demo
 
@@ -10,27 +10,43 @@ This project demonstrates practical implementation of Confidential USD operation
 
 -   **Confidential USD Wrapping/Unwrapping**: Secure conversion between public ERC20 tokens and Confidential USDs while preserving privacy
 -   **Private Token Transfers**: Execute Confidential USD transfers with encrypted balances and amounts
--   **Optimized UX**: Extensive frontend optimizations and edge case testing to deliver a familiar Web3 experience for users accustomed to non-confidential dApps
+
+
+### Confidential Token Unwrap Flow with Public Decryption
+
+
+  Client                    ERC7984 Contract              External Index Service
+    |                              |                              |
+    |--unwrap(from, to, -------->  |                              |
+    |  encryptedAmount,            |                              |
+    |  inputProof)                 |                              |
+    |                              |                              |
+    |                        _burn(from, amount)                  |
+    |                        returns burntAmount                  |
+    |                              |                              |
+    |                              |--emit UnwrapRequested(-----> |
+    |                              |  to, burntAmount)            |
+    |                              |                              |
+    |<-------query pending---------|                              |
+    |         requests-------------|----------------------------->|
+    |                              |                              |
+    | fheInstance.publicDecrypt(burntAmount)                      |
+    | → gets cleartextAmount + decryptionProof                    |
+    |                              |                              |
+    |--finalizeUnwrap(--------->   |                              |
+    |  burntAmount,                |                              |
+    |  cleartextAmount,            |                              |
+    |  decryptionProof)            |                              |
+    |                              |                              |
 
 ## Technical Implementation
 
--   Smart contracts built on OpenZeppelin Confidential Contracts v0.1.0
+-   Smart contracts built on OpenZeppelin Confidential Contracts v0.3.0
 -   Next.js frontend with comprehensive UI/UX optimizations
 
 This represents my second Zama project, focusing on practical utility rather than basic syntax learning. The emphasis on frontend polish and user experience demonstrates how FHE technology can be made accessible to mainstream Web3 users without compromising the underlying privacy guarantees.
 
-## Demo Video
-
-📺 [Watch the demo on YouTube](https://youtu.be/XlIAdWsIvcQ)
-
 ## Future Roadmap
 
--   Migration to OpenZeppelin Confidential Contracts v0.2.0
+-   Migration to OpenZeppelin FHEVM v0.9.1
 -   Exploration of additional confidential contract use cases and applications
-
-## Acknowledgments
-
-Special thanks to Poppyseed's React template for providing valuable solutions during frontend development.
-
-[fhevm-react-template](https://github.com/zama-ai/fhevm-react-template)
-[fhevm-next-template](https://github.com/zama-ai/fhevm-next-template)
