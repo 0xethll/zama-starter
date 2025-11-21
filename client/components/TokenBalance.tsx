@@ -162,11 +162,7 @@ export function TokenBalance() {
                         'hover:bg-gray-100 dark:hover:bg-gray-700',
                         'disabled:opacity-50 disabled:cursor-not-allowed',
                     )}
-                    title={
-                        isBalanceVisible
-                            ? 'Hide balance'
-                            : progress.currentStep?.label || 'Show balance'
-                    }
+                    aria-label={isBalanceVisible ? 'Hide balance' : 'Show balance'}
                 >
                     {isDecrypting ? (
                         <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
