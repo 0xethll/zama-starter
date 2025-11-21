@@ -14,7 +14,7 @@ This project demonstrates practical implementation of Confidential USD operation
 
 ### Confidential Token Unwrap Flow with Public Decryption
 
-
+```
   Client                    ERC7984 Contract              External Index Service
     |                              |                              |
     |--unwrap(from, to, -------->  |                              |
@@ -38,6 +38,7 @@ This project demonstrates practical implementation of Confidential USD operation
     |  cleartextAmount,            |                              |
     |  decryptionProof)            |                              |
     |                              |                              |
+```
 
 ## Technical Implementation
 
