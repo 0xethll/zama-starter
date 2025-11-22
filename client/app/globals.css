@@ -4,13 +4,21 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --primary: 255 210 8;
+  --primary: 59 130 246; /* Blue */
+  --primary-purple: 168 85 247;
+  --primary-pink: 236 72 153;
+  --accent-green: 16 185 129;
+  --accent-orange: 251 146 60;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: rgb(var(--primary));
+  --color-primary-purple: rgb(var(--primary-purple));
+  --color-primary-pink: rgb(var(--primary-pink));
+  --color-accent-green: rgb(var(--accent-green));
+  --color-accent-orange: rgb(var(--accent-orange));
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -19,7 +27,6 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
-    --primary: 255 210 8;
   }
 }
 
@@ -29,6 +36,7 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Modern color utilities */
 .primary-accent {
   color: rgb(var(--primary));
 }
@@ -39,4 +47,96 @@ body {
 
 .primary-border {
   border-color: rgb(var(--primary));
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, rgb(var(--primary)), rgb(var(--primary-purple)), rgb(var(--primary-pink)));
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, rgb(var(--primary)), rgb(var(--primary-purple)), rgb(var(--primary-pink)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glassmorphism effect */
+.glass {
+  backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.glass-dark {
+  backdrop-filter: blur(12px);
+  background-color: rgba(10, 10, 10, 0.7);
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgb(var(--primary)), rgb(var(--primary-purple)));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgb(var(--primary-purple)), rgb(var(--primary-pink)));
+}
+
+/* Animated gradient background */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient {
+  background: linear-gradient(270deg, rgb(var(--primary)), rgb(var(--primary-purple)), rgb(var(--primary-pink)));
+  background-size: 200% 200%;
+  animation: gradient-shift 10s ease infinite;
+}
+
+/* Floating blob animation */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 15s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animation-delay-6000 {
+  animation-delay: 6s;
 }

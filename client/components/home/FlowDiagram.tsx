@@ -374,8 +374,8 @@ export function FlowDiagram() {
 
 
   return (
-    <section className="py-20 px-8 bg-white dark:bg-gray-950">
-      <div className="max-w-7xl mx-auto">
+    <section className="py-20 px-6 sm:px-8">
+      <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

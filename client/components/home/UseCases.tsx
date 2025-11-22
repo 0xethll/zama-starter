@@ -9,6 +9,78 @@ import {
   Users,
   TrendingUp,
 } from 'lucide-react'
+import Lottie from 'lottie-react'
+
+// Simple pulse animation for icons
+const pulseAnimation = {
+  v: '5.7.4',
+  fr: 30,
+  ip: 0,
+  op: 60,
+  w: 100,
+  h: 100,
+  nm: 'Pulse',
+  ddd: 0,
+  assets: [],
+  layers: [
+    {
+      ddd: 0,
+      ind: 1,
+      ty: 4,
+      nm: 'Circle',
+      sr: 1,
+      ks: {
+        o: {
+          a: 1,
+          k: [
+            { t: 0, s: [80], e: [100] },
+            { t: 30, s: [100], e: [80] },
+            { t: 60, s: [80] },
+          ],
+        },
+        p: { a: 0, k: [50, 50, 0] },
+        s: {
+          a: 1,
+          k: [
+            { t: 0, s: [100, 100, 100], e: [120, 120, 100] },
+            { t: 30, s: [120, 120, 100], e: [100, 100, 100] },
+            { t: 60, s: [100, 100, 100] },
+          ],
+        },
+      },
+      ao: 0,
+      shapes: [
+        {
+          ty: 'gr',
+          it: [
+            {
+              d: 1,
+              ty: 'el',
+              s: { a: 0, k: [40, 40] },
+              p: { a: 0, k: [0, 0] },
+            },
+            {
+              ty: 'fl',
+              c: { a: 0, k: [1, 1, 1, 1] },
+              o: { a: 0, k: 30 },
+            },
+            {
+              ty: 'tr',
+              p: { a: 0, k: [0, 0] },
+              a: { a: 0, k: [0, 0] },
+              s: { a: 0, k: [100, 100] },
+              r: { a: 0, k: 0 },
+              o: { a: 0, k: 100 },
+            },
+          ],
+        },
+      ],
+      ip: 0,
+      op: 60,
+      st: 0,
+    },
+  ],
+}
 
 export function UseCases() {
   const useCases = [
@@ -87,8 +159,8 @@ export function UseCases() {
   ]
 
   return (
-    <section className="py-20 px-8 bg-gray-50 dark:bg-gray-900/50">
-      <div className="max-w-7xl mx-auto">
+    <section className="py-20 px-6 sm:px-8 bg-gradient-to-br from-gray-50/50 via-transparent to-gray-50/50 dark:from-gray-900/30 dark:via-transparent dark:to-gray-900/30">
+      <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -128,11 +200,31 @@ export function UseCases() {
                   <motion.div
                     whileHover={{ rotate: 360 }}
                     transition={{ duration: 0.6 }}
-                    className={`p-3 bg-gradient-to-r ${useCase.gradient} rounded-xl`}
+                    className={`relative p-3 bg-gradient-to-r ${useCase.gradient} rounded-xl overflow-hidden`}
                   >
-                    <useCase.icon className="h-8 w-8 text-white" />
+                    {/* Lottie pulse effect behind icon */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-40">
+                      <Lottie
+                        animationData={pulseAnimation}
+                        loop={true}
+                        style={{ width: 60, height: 60 }}
+                      />
+                    </div>
+                    <useCase.icon className="h-8 w-8 text-white relative z-10" />
                   </motion.div>
-                  <span className="text-4xl">{useCase.emoji}</span>
+                  <motion.span
+                    className="text-4xl"
+                    animate={{
+                      scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  >
+                    {useCase.emoji}
+                  </motion.span>
                 </div>
 
                 {/* Title & Description */}

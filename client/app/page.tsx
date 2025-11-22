@@ -20,17 +20,29 @@ export default function Home() {
         {/* Hero Section */}
         <HeroSection />
 
+        {/* Section Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent max-w-4xl mx-auto" />
+
         {/* Problem & Solution */}
         <ProblemSolution />
 
         {/* Use Cases */}
         <UseCases />
 
+        {/* Section Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent max-w-4xl mx-auto" />
+
         {/* Flow Diagram */}
         <FlowDiagram />
 
+        {/* Section Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent max-w-4xl mx-auto" />
+
         {/* Technology Stack */}
         <TechnologyStack />
+
+        {/* Footer Spacer */}
+        <div className="h-20" />
       </div>
     </AppLayout>
   )

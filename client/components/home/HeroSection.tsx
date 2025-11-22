@@ -2,84 +2,26 @@
 
 import { motion } from 'framer-motion'
 import { Lock, Unlock, ArrowRight, Shield } from 'lucide-react'
-import { useCallback } from 'react'
-import Particles from '@tsparticles/react'
-import type { Engine } from '@tsparticles/engine'
-import { loadSlim } from '@tsparticles/slim'
 
 export function HeroSection() {
-  const particlesInit = useCallback(async (engine: Engine) => {
-    await loadSlim(engine)
-  }, [])
-
   return (
-    <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
-      {/* Particles Background */}
-      <Particles
-        id="tsparticles"
-        init={particlesInit}
-        options={{
-          background: {
-            color: {
-              value: 'transparent',
-            },
-          },
-          fpsLimit: 120,
-          particles: {
-            color: {
-              value: '#3b82f6',
-            },
-            links: {
-              color: '#3b82f6',
-              distance: 150,
-              enable: true,
-              opacity: 0.2,
-              width: 1,
-            },
-            move: {
-              enable: true,
-              speed: 1,
-              direction: 'none',
-              random: false,
-              straight: false,
-              outModes: {
-                default: 'bounce',
-              },
-            },
-            number: {
-              density: {
-                enable: true,
-              },
-              value: 80,
-            },
-            opacity: {
-              value: 0.3,
-            },
-            shape: {
-              type: 'circle',
-            },
-            size: {
-              value: { min: 1, max: 3 },
-            },
-          },
-          detectRetina: true,
-        }}
-        className="absolute inset-0 -z-10"
-      />
-
-      <div className="relative z-10 max-w-6xl mx-auto px-8 text-center">
+    <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden py-20">
+      <div className="relative z-10 max-w-5xl mx-auto px-6 sm:px-8 text-center">
         {/* Title */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
+          className="space-y-6"
         >
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
             Privacy-First Tokens
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-8 max-w-3xl mx-auto">
-            Transform any ERC20 token into a confidential asset using Fully
-            Homomorphic Encryption
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            Transform any ERC20 token into a confidential asset using{' '}
+            <span className="font-semibold text-gray-700 dark:text-gray-300">
+              Fully Homomorphic Encryption
+            </span>
           </p>
         </motion.div>
 
@@ -111,8 +53,8 @@ export function HeroSection() {
             </div>
           </motion.div>
 
-          {/* Arrow with encryption particles */}
-          <motion.div className="flex items-center gap-2">
+          {/* Arrow with encryption animation */}
+          <motion.div className="flex items-center gap-4">
             <motion.div
               animate={{
                 x: [0, 10, 0],
@@ -126,20 +68,64 @@ export function HeroSection() {
             >
               <ArrowRight className="h-8 w-8 text-blue-500" />
             </motion.div>
+
+            {/* FHE Encryption Box */}
             <motion.div
-              animate={{
-                rotate: 360,
-                scale: [1, 1.2, 1],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="text-2xl"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="relative"
             >
-              🔐
+              <div className="relative bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 p-8 rounded-2xl shadow-2xl">
+                {/* Rotating Lock Icon */}
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: 'linear',
+                  }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <Lock className="h-12 w-12 text-white/30" />
+                </motion.div>
+
+                {/* Center Content */}
+                <div className="relative z-10 flex flex-col items-center justify-center gap-2">
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  >
+                    <Shield className="h-10 w-10 text-white" />
+                  </motion.div>
+                  <div className="text-center">
+                    <p className="text-white font-bold text-lg">FHE</p>
+                    <p className="text-white/80 text-xs">Encrypting</p>
+                  </div>
+                </div>
+
+                {/* Pulse Effect */}
+                <motion.div
+                  className="absolute inset-0 bg-white rounded-2xl"
+                  animate={{
+                    opacity: [0, 0.2, 0],
+                    scale: [0.95, 1.05, 0.95],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+              </div>
             </motion.div>
+
             <motion.div
               animate={{
                 x: [0, 10, 0],
