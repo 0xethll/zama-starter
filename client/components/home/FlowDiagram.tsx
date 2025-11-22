@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   ReactFlow,
@@ -18,7 +18,16 @@ import {
 import { Lock, Unlock, RefreshCw } from 'lucide-react'
 
 // Custom Node Component
-function CustomNode({ data }: { data: any }) {
+interface CustomNodeData {
+  label: string
+  description?: string
+  icon?: React.ComponentType<{ className?: string }>
+  iconColor?: string
+  borderColor: string
+  bgColor: string
+}
+
+function CustomNode({ data }: { data: CustomNodeData }) {
   return (
     <motion.div
       initial={{ scale: 0.8, opacity: 0 }}
@@ -503,8 +512,8 @@ export function FlowDiagram() {
                   <li>Sender creates <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded text-xs">encrypted input + proof</code></li>
                   <li>Sender calls <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded text-xs">transfer(to, encryptedAmount, proof)</code></li>
                   <li>Contract <code className="bg-orange-100 dark:bg-orange-900 px-1 rounded text-xs">verifies input proof</code></li>
-                  <li>Contract performs <code className="bg-red-100 dark:bg-red-900 px-1 rounded text-xs">FHE.sub()</code> on sender's encrypted balance</li>
-                  <li>Contract performs <code className="bg-green-100 dark:bg-green-900 px-1 rounded text-xs">FHE.add()</code> on receiver's encrypted balance</li>
+                  <li>Contract performs <code className="bg-red-100 dark:bg-red-900 px-1 rounded text-xs">FHE.sub()</code> on sender&apos;s encrypted balance</li>
+                  <li>Contract performs <code className="bg-green-100 dark:bg-green-900 px-1 rounded text-xs">FHE.add()</code> on receiver&apos;s encrypted balance</li>
                 </ol>
               </div>
 

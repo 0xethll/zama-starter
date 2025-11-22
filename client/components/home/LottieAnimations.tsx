@@ -208,8 +208,7 @@ export function LottieAnimation({
   className = '',
   size = 200,
 }: LottieAnimationProps) {
-  const [animationData, setAnimationData] = useState<any>(encryptionFallback)
-  const [isLoading, setIsLoading] = useState(false)
+  const [animationData, setAnimationData] = useState<typeof encryptionFallback>(encryptionFallback)
 
   // Use fallback animation directly for better reliability
   useEffect(() => {

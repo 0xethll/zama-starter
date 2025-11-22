@@ -1,13 +1,18 @@
 'use client'
 
-import { useCallback } from 'react'
-import Particles from '@tsparticles/react'
-import type { Engine } from '@tsparticles/engine'
+import { useEffect, useState } from 'react'
+import Particles, { initParticlesEngine } from '@tsparticles/react'
 import { loadSlim } from '@tsparticles/slim'
 
 export function GlobalBackground() {
-  const particlesInit = useCallback(async (engine: Engine) => {
-    await loadSlim(engine)
+  const [init, setInit] = useState(false)
+
+  useEffect(() => {
+    initParticlesEngine(async (engine) => {
+      await loadSlim(engine)
+    }).then(() => {
+      setInit(true)
+    })
   }, [])
 
   return (
@@ -22,10 +27,10 @@ export function GlobalBackground() {
       <div className="absolute bottom-20 right-20 w-72 h-72 bg-blue-300 dark:bg-blue-900/30 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-xl opacity-70 animate-blob animation-delay-6000" />
 
       {/* Particles Network */}
-      <Particles
-        id="global-particles"
-        init={particlesInit}
-        options={{
+      {init && (
+        <Particles
+          id="global-particles"
+          options={{
           background: {
             color: {
               value: 'transparent',
@@ -56,7 +61,6 @@ export function GlobalBackground() {
             number: {
               density: {
                 enable: true,
-                area: 800,
               },
               value: 60,
             },
@@ -65,7 +69,7 @@ export function GlobalBackground() {
               animation: {
                 enable: true,
                 speed: 1,
-                minimumValue: 0.1,
+                sync: false,
               },
             },
             shape: {
@@ -76,7 +80,7 @@ export function GlobalBackground() {
               animation: {
                 enable: true,
                 speed: 2,
-                minimumValue: 0.5,
+                sync: false,
               },
             },
           },
@@ -97,9 +101,10 @@ export function GlobalBackground() {
               },
             },
           },
-        }}
-        className="absolute inset-0"
-      />
+          }}
+          className="absolute inset-0"
+        />
+      )}
 
       {/* Subtle Grid Pattern */}
       <div

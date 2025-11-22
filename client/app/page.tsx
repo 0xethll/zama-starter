@@ -4,14 +4,6 @@ import { ProblemSolution } from '@/components/home/ProblemSolution'
 import { UseCases } from '@/components/home/UseCases'
 import { FlowDiagram } from '@/components/home/FlowDiagram'
 import { TechnologyStack } from '@/components/home/TechnologyStack'
-import {
-  PlayCircle,
-  Volume2,
-  ExternalLink,
-  Shield,
-  ArrowRight,
-} from 'lucide-react'
-import Link from 'next/link'
 
 export default function Home() {
   return (
