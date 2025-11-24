@@ -2,19 +2,27 @@
   "name": "contracts",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "test": "hardhat test test/USDERC20.test.ts test/ConfidentialTokenFactory.test.ts",
+    "test:all": "hardhat test",
+    "test:confidential": "hardhat test test/ConfidentialERC20Wrapper.test.ts",
+    "test:coverage": "hardhat coverage",
+    "test:gas": "REPORT_GAS=true hardhat test"
+  },
   "dependencies": {
-    "encrypted-types": "^0.0.4",
     "@fhevm/solidity": "^0.9.1",
-    "@zama-fhe/oracle-solidity": "^0.1.0",
+    "@openzeppelin/confidential-contracts": "github:OpenZeppelin/openzeppelin-confidential-contracts#master",
     "@openzeppelin/contracts": "^5.1.0",
     "@openzeppelin/contracts-upgradeable": "^5.1.0",
     "@openzeppelin/merkle-tree": "^1.0.7",
-    "@openzeppelin/confidential-contracts": "github:OpenZeppelin/openzeppelin-confidential-contracts#master"
+    "@zama-fhe/oracle-solidity": "^0.1.0",
+    "encrypted-types": "^0.0.4"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.0.0",
     "@nomicfoundation/hardhat-toolbox-viem": "^5.0.0",
     "@types/node": "^22.8.5",
+    "@zama-fhe/relayer-sdk": "0.3.0-5",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "hardhat": "^3.0.0",
     "typescript": "~5.8.0",

@@ -6,7 +6,9 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract USDERC20 is ERC20 {
     uint8 private _decimals;
 
-    uint256 public constant MAX_MINT_AMOUNT = 10_000_000;
+    // MAX_MINT_AMOUNT in base units (with decimals)
+    // For 6 decimals: 10,000,000 * 10^6 = 10,000,000,000,000
+    uint256 public constant MAX_MINT_AMOUNT = 10_000_000 * 10**6;
 
     constructor(
         string memory name,
@@ -22,7 +24,7 @@ contract USDERC20 is ERC20 {
 
     function mint(address to, uint256 amount) public {
         uint256 mintAmount = amount > MAX_MINT_AMOUNT ? MAX_MINT_AMOUNT : amount;
-        
+
         _mint(to, mintAmount);
     }
 
