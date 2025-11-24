@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: factory-indexer
+field_selection:
+  transaction_fields:
+    - hash
+networks:
+- id: 11155111
+  start_block: 0
+  contracts:
+  - name: ConfidentialTokenFactory
+    address:
+    - 0x08B2616Eb8F33700014fd53f143aFcaD1d6e512c
+    handler: src/EventHandlers.ts
+    events:
+    - event: TokenWrapped(address indexed erc20Token, address indexed confidentialToken, string name, string symbol, address indexed creator)
+  - name: ConfidentialERC20Wrapper
+    handler: src/EventHandlers.ts
+    events:
+    - event: ConfidentialTransfer(address indexed from, address indexed to, bytes32 amount)
+    - event: UnwrapRequested(address indexed receiver, bytes32 amount)
+    - event: UnwrapFinalized(address indexed receiver, bytes32 encryptedAmount, uint256 cleartextAmount)
+unordered_multichain_mode: true
+preload_handlers: true

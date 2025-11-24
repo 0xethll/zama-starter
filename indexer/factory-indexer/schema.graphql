@@ -1,0 +1,36 @@
+type ConfidentialTokenFactory_TokenWrapped {
+  id: ID!
+  erc20Token: String!
+  confidentialToken: String!
+  name: String!
+  symbol: String!
+  creator: String!
+}
+
+type ConfidentialERC20Wrapper_ConfidentialTransfer {
+  id: ID!
+  tokenAddress: String!
+  tokenName: String!
+  tokenSymbol: String!
+  from: String!
+  to: String!
+  amount: String!
+}
+
+type ConfidentialERC20Wrapper_UnwrapRequest {
+  id: String!
+  tokenAddress: String!
+  tokenName: String!
+  tokenSymbol: String!
+  burntAmount: String!
+  recipient: String!
+  requestBlockNumber: BigInt!
+  requestTransactionHash: String!
+  requestTimestamp: BigInt!
+  isFinalized: Boolean!
+  cleartextAmount: BigInt
+  finalizedBlockNumber: BigInt
+  finalizedTransactionHash: String
+  finalizedTimestamp: BigInt
+}
+
