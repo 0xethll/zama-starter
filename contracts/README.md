@@ -26,3 +26,4 @@ npx hardhat ignition deploy --network sepolia ./ignition/modules/WrapperToken.ts
 
 USDModule#USDERC20 - 0xA9062b4629bc8fB79cB4eE904C5c9E179e9F492a
 cUSDX402Module#ConfidentialUSDX402 - 0xdCE9Fa07b2ad32D2E6C8051A895262C9914E9445
+ConfidentialTokenFactoryModule#ConfidentialTokenFactory - 0x08B2616Eb8F33700014fd53f143aFcaD1d6e512c
