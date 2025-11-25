@@ -13,9 +13,6 @@ import { useAccount } from 'wagmi'
 import { Signer } from 'ethers'
 import { getEthersSigner } from '@/lib/client-to-signer'
 import { initializeFHE, createFHEInstance } from '@/lib/fhe'
-import {
-    useCUSDBalance,
-} from '@/hooks/useTokenContract'
 import { useConfig } from 'wagmi'
 import type { FhevmInstance } from '@zama-fhe/relayer-sdk/bundle'
 
@@ -94,8 +91,7 @@ interface FHEContextType {
     // Signer state
     signer: Signer | null
 
-    // Balance state
-    encryptedBalance: `0x${string}` | undefined
+    // Balance state (for UI state management only)
     decryptedBalance: bigint | null
     isBalanceVisible: boolean
 
@@ -111,9 +107,8 @@ interface FHEProviderProps {
 }
 
 export function FHEProvider({ children }: FHEProviderProps) {
-    const { address, connector, isConnected } = useAccount()
+    const { address } = useAccount()
     const config = useConfig()
-    const { encryptedBalance } = useCUSDBalance()
 
     const [signer, setSigner] = useState<Signer | null>(null)
     const [decryptedBalance, setDecryptedBalance] = useState<bigint | null>(
@@ -130,25 +125,44 @@ export function FHEProvider({ children }: FHEProviderProps) {
         setFheError(globalError)
     }, [])
 
-    // Initialize FHE with singleton pattern
+    // Initialize FHE with singleton pattern (delayed to allow other effects to run first)
     useEffect(() => {
         isMountedRef.current = true
 
         // Subscribe to global FHE state changes
         stateChangeListeners.add(updateFHEState)
 
-        // Initialize if not already done
-        if (!globalIsInitialized && !globalInitPromise && !globalError) {
-            initializeFHESingleton().catch(() => {
-                // Error already handled in initializeFHESingleton
-            })
-        } else {
-            updateFHEState()
+        // Delay FHE initialization to allow other useEffects (like token fetching) to run first
+        // This prevents FHE's heavy WASM loading from blocking other operations
+        const startInit = () => {
+            if (!isMountedRef.current) return
+
+            // Initialize if not already done
+            if (!globalIsInitialized && !globalInitPromise && !globalError) {
+                initializeFHESingleton().catch(() => {
+                    // Error already handled in initializeFHESingleton
+                })
+            } else {
+                updateFHEState()
+            }
         }
 
-        return () => {
-            isMountedRef.current = false
-            stateChangeListeners.delete(updateFHEState)
+        // Use requestIdleCallback if available, otherwise setTimeout
+        // This ensures FHE init happens when browser is idle
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            const handle = window.requestIdleCallback(startInit, { timeout: 2000 })
+            return () => {
+                window.cancelIdleCallback(handle)
+                isMountedRef.current = false
+                stateChangeListeners.delete(updateFHEState)
+            }
+        } else {
+            const timer = setTimeout(startInit, 300)
+            return () => {
+                clearTimeout(timer)
+                isMountedRef.current = false
+                stateChangeListeners.delete(updateFHEState)
+            }
         }
     }, [updateFHEState])
 
@@ -171,7 +185,7 @@ export function FHEProvider({ children }: FHEProviderProps) {
     // Initialize signer when wallet is connected
     useEffect(() => {
         const initSigner = async () => {
-            if (!isConnected || !address) {
+            if (!address) {
                 setSigner(null)
                 return
             }
@@ -191,7 +205,7 @@ export function FHEProvider({ children }: FHEProviderProps) {
         }
 
         initSigner()
-    }, [config, address, isConnected])
+    }, [config, address])
 
     // Clear decrypted balance when address changes (wallet switch)
     useEffect(() => {
@@ -199,21 +213,12 @@ export function FHEProvider({ children }: FHEProviderProps) {
         setIsBalanceVisible(false)
     }, [address])
 
-    // Clear decrypted balance when encrypted balance changes (after faucet/transfer)
-    useEffect(() => {
-        if (isBalanceVisible) {
-            setDecryptedBalance(null)
-            setIsBalanceVisible(false)
-        }
-    }, [encryptedBalance])
-
     const contextValue: FHEContextType = {
         isFHEReady: globalIsInitialized && !!globalFheInstance && !fheError,
         fheInstance: globalFheInstance,
         fheError,
         retryFHE,
         signer,
-        encryptedBalance,
         decryptedBalance,
         isBalanceVisible,
         setDecryptedBalance,

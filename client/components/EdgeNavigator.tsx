@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   FileText,
-  ArrowUpDown,
   Package,
   Coins,
   ChevronRight,
@@ -16,8 +15,7 @@ import { useState } from 'react'
 
 const navigation = [
   { name: 'Overview', href: '/', icon: FileText, color: 'from-blue-500 to-cyan-500' },
-  { name: 'Transfer', href: '/transfer', icon: ArrowUpDown, color: 'from-purple-500 to-pink-500' },
-  { name: 'Wrap', href: '/wrap', icon: Package, color: 'from-green-500 to-emerald-500' },
+  { name: 'Token Manager', href: '/tokens', icon: Package, color: 'from-purple-500 to-pink-500' },
   { name: 'Faucet', href: '/faucet', icon: Coins, color: 'from-yellow-500 to-orange-500' },
 ]
 

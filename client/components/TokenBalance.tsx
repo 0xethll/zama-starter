@@ -7,7 +7,7 @@ import { CONTRACTS } from '@/lib/contracts'
 import { Coins, Eye, EyeOff, Loader2, DollarSign, Shield } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useFHEContext } from '@/contexts/FHEContext'
-import { useUsdBalance } from '@/hooks/useTokenContract'
+import { useUsdBalance, useCUSDBalance } from '@/hooks/useTokenContract'
 import { formatUnits } from 'viem'
 
 export function TokenBalance() {
@@ -18,7 +18,6 @@ export function TokenBalance() {
         fheError,
         retryFHE,
         signer,
-        encryptedBalance,
         decryptedBalance,
         isBalanceVisible,
         setDecryptedBalance,
@@ -30,6 +29,9 @@ export function TokenBalance() {
 
     // USD balance
     const { balance: usdBalance } = useUsdBalance()
+
+    // Confidential USD balance (fetch here instead of in FHEContext)
+    const { encryptedBalance } = useCUSDBalance()
 
     // Calculate progress state locally (moved from FHEContext for performance)
     const progress = useMemo(() => {
