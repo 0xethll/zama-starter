@@ -18,7 +18,6 @@ export function CreateWrapperPrompt({
   const {
     createWrapper,
     isLoading,
-    isInitiating,
     isConfirmed,
     error,
     txHash,
@@ -111,12 +110,7 @@ export function CreateWrapperPrompt({
             disabled={isLoading}
             className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 mx-auto"
           >
-            {isInitiating ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Preparing Transaction...
-              </>
-            ) : isLoading ? (
+            {isLoading ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Creating Wrapper...

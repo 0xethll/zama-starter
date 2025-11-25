@@ -1,6 +1,6 @@
 // Hook for interacting with ConfidentialTokenFactory contract
 
-import { useState, useCallback } from 'react'
+import { useCallback } from 'react'
 import { useAccount, useWaitForTransactionReceipt, useWriteContract, useReadContract } from 'wagmi'
 import { CONTRACTS } from '@/lib/contracts'
 import type { Address } from 'viem'
@@ -10,7 +10,6 @@ import type { Address } from 'viem'
  */
 export function useCreateWrappedToken() {
   const { address } = useAccount()
-  const [isInitiating, setIsInitiating] = useState(false)
 
   const {
     data: hash,
@@ -34,8 +33,6 @@ export function useCreateWrappedToken() {
         throw new Error('Wallet not connected')
       }
 
-      setIsInitiating(true)
-
       try {
         writeContract({
           address: CONTRACTS.ConfidentialTokenFactory.address,
@@ -46,8 +43,6 @@ export function useCreateWrappedToken() {
       } catch (error) {
         console.error('Create wrapper error:', error)
         throw error
-      } finally {
-        setIsInitiating(false)
       }
     },
     [address, writeContract]
@@ -59,7 +54,6 @@ export function useCreateWrappedToken() {
   return {
     createWrapper,
     isLoading,
-    isInitiating,
     isConfirmed,
     error: error?.message,
     reset,

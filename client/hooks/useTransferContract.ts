@@ -1,6 +1,6 @@
 // React hooks for Confidential USD transfers
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   useAccount,
   useWriteContract,
@@ -19,8 +19,8 @@ export function useTransferContract() {
   const { address, isConnected } = useAccount()
   const { isFHEReady, fheInstance } = useFHEContext()
   const { refetch: refetchBalance } = useCUSDBalance()
-  const [isPreparingTx, setIsPreparingTx] = useState(false)
-  const [isInitiating, setIsInitiating] = useState(false)
+  const [isEncrypting, setIsEncrypting] = useState(false)
+  const [preTxError, setPreTxError] = useState<string | null>(null)
 
   // Contract write hook
   const {
@@ -40,60 +40,75 @@ export function useTransferContract() {
     hash: txHash,
   })
 
-  const transfer = async (recipient: string, amount: number): Promise<void> => {
-    setIsInitiating(true)
-    
-    try {
+  const transfer = useCallback(
+    async (recipient: string, amount: number): Promise<void> => {
+      setPreTxError(null)
+
       if (!isConnected) {
-        throw new Error('Please connect your wallet first')
+        setPreTxError('Please connect your wallet first')
+        return
       }
 
       if (!address) {
-        throw new Error('No wallet address found')
+        setPreTxError('No wallet address found')
+        return
       }
 
       if (!isFHEReady || !fheInstance) {
-        throw new Error(
-          'FHE system is not ready. Please wait for initialization.',
-        )
+        setPreTxError('FHE system is not ready. Please wait for initialization.')
+        return
       }
 
       if (!recipient || !isAddress(recipient)) {
-        throw new Error('Please enter a valid recipient address')
+        setPreTxError('Please enter a valid recipient address')
+        return
       }
 
       if (!amount || amount <= 0) {
-        throw new Error('Please enter a valid amount')
+        setPreTxError('Please enter a valid amount')
+        return
       }
 
-      setIsPreparingTx(true)
-      resetWrite()
+      try {
+        setIsEncrypting(true)
+        resetWrite()
 
-      // Encrypt the transfer amount
-      const { handle, proof } = await encryptUint64(
-        fheInstance,
-        CONTRACTS.cUSD_ERC7984.address,
-        address,
-        BigInt(amount * 1000000),
-      )
+        // Encrypt the transfer amount
+        const { handle, proof } = await encryptUint64(
+          fheInstance,
+          CONTRACTS.cUSD_ERC7984.address,
+          address,
+          BigInt(amount * 1000000),
+        )
 
-      // Call the transfer function
-      transferTokens({
-        address: CONTRACTS.cUSD_ERC7984.address,
-        abi: CONTRACTS.cUSD_ERC7984.abi,
-        functionName: 'confidentialTransfer',
-        args: [recipient, toHex(handle), toHex(proof)],
-      })
-    } catch (error) {
-      console.error('Error preparing transfer transaction:', error)
-      setIsInitiating(false)
-      setIsPreparingTx(false)
-      throw error
-    }
-  }
+        // Call the transfer function
+        transferTokens({
+          address: CONTRACTS.cUSD_ERC7984.address,
+          abi: CONTRACTS.cUSD_ERC7984.abi,
+          functionName: 'confidentialTransfer',
+          args: [recipient, toHex(handle), toHex(proof)],
+        })
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Encryption failed.'
+        setPreTxError(message)
+        console.error('Error preparing transfer transaction:', error)
+      } finally {
+        setIsEncrypting(false)
+      }
+    },
+    [
+      isConnected,
+      address,
+      isFHEReady,
+      fheInstance,
+      resetWrite,
+      transferTokens,
+    ],
+  )
 
   // Parse contract errors for user-friendly messages
-  const errorMessage = useMemo(() => {
+  const parsedContractError = useMemo(() => {
     const error = writeError || confirmError
     if (!error) return null
 
@@ -118,14 +133,6 @@ export function useTransferContract() {
     return 'Transaction failed. Please try again.'
   }, [writeError, confirmError])
 
-  // Reset initiating state when transaction starts or completes
-  useEffect(() => {
-    if (isWriting || isConfirmed || errorMessage) {
-      setIsInitiating(false)
-      setIsPreparingTx(false)
-    }
-  }, [isWriting, isConfirmed, errorMessage])
-
   // Refetch balance after successful transfer
   useEffect(() => {
     if (isConfirmed) {
@@ -133,22 +140,19 @@ export function useTransferContract() {
     }
   }, [isConfirmed, refetchBalance])
 
+  const isLoading = isEncrypting || isWriting || isConfirming
+  const error = preTxError || parsedContractError
+
   return {
     transfer,
-    isLoading: isInitiating || isPreparingTx || isWriting || isConfirming,
-    isInitiating,
-    isPreparingTx,
-    isWriting,
-    isConfirming,
+    isLoading,
     isConfirmed,
     txHash,
-    error: errorMessage,
-    canTransfer:
-      isConnected &&
-      isFHEReady &&
-      !isInitiating &&
-      !isPreparingTx &&
-      !isWriting &&
-      !isConfirming,
+    error,
+    canTransfer: isConnected && isFHEReady && !isLoading,
+    reset: () => {
+      setPreTxError(null)
+      resetWrite()
+    },
   }
 }

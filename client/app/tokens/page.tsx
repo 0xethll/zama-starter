@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AppLayout } from '@/components/AppLayout'
 import { TokenPairSelector } from '@/components/TokenPairSelector'
 import { AddTokenModal } from '@/components/AddTokenModal'
@@ -22,7 +22,7 @@ export default function TokensPage() {
     if (tokenPairs.length > 0 && !selectedPair) {
       setSelectedPair(tokenPairs[0])
     }
-  }, [tokenPairs.length, selectedPair])
+  }, [tokenPairs, tokenPairs.length, selectedPair])
 
   // Sync selectedPair with tokenPairs updates (e.g., when balances load)
   useEffect(() => {
@@ -34,12 +34,12 @@ export default function TokensPage() {
         setSelectedPair(updatedPair)
       }
     }
-  }, [tokenPairs])
+  }, [selectedPair, tokenPairs])
 
-  const handleOperationComplete = () => {
+  const handleOperationComplete = useCallback(() => {
     // Refetch token list after an operation completes
     refetch()
-  }
+  }, [refetch])
 
 
   return (

@@ -172,7 +172,7 @@ export function ConfidentialBalanceProvider({ children }: ConfidentialBalancePro
           address: tokenAddress,
           abi: CONTRACTS.cUSD_ERC7984.abi,
           functionName: 'confidentialBalanceOf',
-          args: [address],
+          args: [address!],
         })
 
         console.log(`✅ Got encrypted balance: ${encryptedBalance}`)
@@ -190,10 +190,10 @@ export function ConfidentialBalanceProvider({ children }: ConfidentialBalancePro
         } else {
           console.log('🔓 Decrypting balance...')
           decryptedBalance = await decryptForUser(
-            fheInstance,
+            fheInstance!, // Add non-null assertion here
             encryptedBalance as string,
             tokenAddress,
-            signer
+            signer! // Also ensure signer is not null, as it's checked by canDecrypt
           )
           console.log(`✅ Decrypted balance: ${decryptedBalance}`)
         }

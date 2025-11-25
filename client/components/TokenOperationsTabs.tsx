@@ -17,16 +17,17 @@ import { formatUnits, parseUnits } from 'viem'
 import { toHex } from 'viem'
 import type { TokenPair } from '@/hooks/useTokenList'
 import {
-  useWrapToken,
-  useUnwrapToken,
-  useUsdAllowance,
-  useUsdApproval,
+  useAllowance,
+  useApproval,
+  useWrap,
+  useUnwrap,
 } from '@/hooks/useWrapUnwrap'
 import { useTransferContract } from '@/hooks/useTransferContract'
 import { useFHEContext } from '@/contexts/FHEContext'
 import { useConfidentialBalance } from '@/contexts/ConfidentialBalanceContext'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { encryptUint64, formatTokenAmount } from '@/lib/fhe'
+import { formatErrorMessage } from '@/lib/utils'
 import { UnwrapRequestsList } from '@/components/UnwrapRequestsList'
 import { useUnwrapRequests } from '@/hooks/useUnwrapRequests'
 import { useCreateWrappedToken } from '@/hooks/useFactoryContract'
@@ -126,22 +127,38 @@ function WrapTab({
     error: wrapperError,
   } = useCreateWrappedToken()
 
-  const { allowance: usdAllowance, refetchAllowance } = useUsdAllowance()
+  const { allowance, refetchAllowance } = useAllowance(
+    tokenPair.erc20Address,
+    tokenPair.wrappedAddress || undefined,
+  )
   const {
     approveTokens,
-    isApproving,
+    isLoading: isApproving,
     isConfirmed: isApprovalConfirmed,
-    approvalError,
-    resetApproval,
-  } = useUsdApproval()
+    error: approvalError,
+  } = useApproval(
+    tokenPair.erc20Address,
+    tokenPair.wrappedAddress || undefined,
+    tokenPair.erc20Decimals,
+  )
 
   const {
     wrapTokens,
-    isWrapping,
+    isLoading: isWrapping,
     isConfirmed: isWrapConfirmed,
-    wrapError,
-    resetWrap,
-  } = useWrapToken()
+    error: wrapError,
+    reset: resetWrap,
+  } = useWrap(tokenPair.wrappedAddress || undefined, tokenPair.erc20Decimals)
+
+  // Reset state when token pair changes
+  useEffect(() => {
+    setWrapAmount('')
+    setCurrentStep(null)
+    setCompletedSteps([])
+    resetWrap()
+    wrapperCreatedContinuedRef.current = false
+    approvalCompletedRef.current = false
+  }, [tokenPair.erc20Address, resetWrap])
 
   // Handle wrapper creation completion
   useEffect(() => {
@@ -167,7 +184,7 @@ function WrapTab({
       wrapAmount &&
       !currentStep &&
       address &&
-      !wrapperCreatedContinuedRef.current  // Prevent duplicate execution
+      !wrapperCreatedContinuedRef.current // Prevent duplicate execution
     ) {
       wrapperCreatedContinuedRef.current = true
       console.log('✅ Wrapper created, auto-continuing to next step...')
@@ -175,7 +192,7 @@ function WrapTab({
       // Check if approval is needed
       const wrapAmountWei = parseUnits(wrapAmount, tokenPair.erc20Decimals)
       const hasInsufficientAllowance =
-        usdAllowance !== undefined && wrapAmountWei > usdAllowance
+        allowance !== undefined && wrapAmountWei > allowance
 
       setTimeout(() => {
         if (hasInsufficientAllowance) {
@@ -193,7 +210,11 @@ function WrapTab({
     wrapAmount,
     currentStep,
     address,
-  ])  // Remove function dependencies
+    allowance, // Added
+    approveTokens, // Added
+    tokenPair.erc20Decimals, // Added
+    wrapTokens, // Added
+  ])
 
   // Reset wrapper continued ref when wrapper address changes
   useEffect(() => {
@@ -222,7 +243,15 @@ function WrapTab({
         }
       }, 1000)
     }
-  }, [isApprovalConfirmed, completedSteps, isWrapping, currentStep])  // Remove function dependencies
+  }, [
+    isApprovalConfirmed,
+    completedSteps,
+    isWrapping,
+    currentStep,
+    refetchAllowance,
+    wrapAmount,
+    wrapTokens,
+  ]) // Remove function dependencies
 
   // Reset approval ref when approval state changes
   useEffect(() => {
@@ -262,15 +291,8 @@ function WrapTab({
     if (approvalError) {
       setCurrentStep(null)
       approvalCompletedRef.current = false
-
-      // Auto-clear error after 3 seconds to allow retry
-      const timer = setTimeout(() => {
-        resetApproval()
-      }, 3000)
-
-      return () => clearTimeout(timer)
     }
-  }, [approvalError, resetApproval])
+  }, [approvalError])
 
   // Handle wrap error - auto-clear after delay to allow retry
   useEffect(() => {
@@ -301,16 +323,16 @@ function WrapTab({
       // Step 2: Approve if needed
       const wrapAmountWei = parseUnits(wrapAmount, tokenPair.erc20Decimals)
       const hasInsufficientAllowance =
-        usdAllowance !== undefined && wrapAmountWei > usdAllowance
+        allowance !== undefined && wrapAmountWei > allowance
       if (hasInsufficientAllowance) {
         setCurrentStep('approve')
-        approveTokens(wrapAmount)
+        await approveTokens(wrapAmount)
         return // Wait for approval to complete
       }
 
       // Step 3: Wrap
       setCurrentStep('wrap')
-      wrapTokens(wrapAmount)
+      await wrapTokens(wrapAmount)
     } catch (error) {
       console.error('Wrap action error:', error)
       setCurrentStep(null)
@@ -319,7 +341,7 @@ function WrapTab({
 
   const maxWrapAmount = formatUnits(
     tokenPair.erc20Balance,
-    tokenPair.erc20Decimals
+    tokenPair.erc20Decimals,
   )
 
   const canWrap =
@@ -404,7 +426,9 @@ function WrapTab({
         {(wrapperError || approvalError || wrapError) && (
           <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
             <AlertCircle className="h-4 w-4" />
-            <span>{wrapperError || approvalError || wrapError}</span>
+            <span>
+              {formatErrorMessage(wrapperError || approvalError || wrapError)}
+            </span>
           </div>
         )}
 
@@ -430,7 +454,8 @@ function UnwrapTab({
 }) {
   const { address } = useAccount()
   const { isFHEReady, fheInstance, fheError } = useFHEContext()
-  const { getBalanceState, clearBalance, getDecryptionRequirements } = useConfidentialBalance()
+  const { getBalanceState, clearBalance, getDecryptionRequirements } =
+    useConfidentialBalance()
   const sidebar = useSidebar()
   const [unwrapAmount, setUnwrapAmount] = useState('')
   const [isPreparingUnwrap, setIsPreparingUnwrap] = useState(false)
@@ -448,38 +473,58 @@ function UnwrapTab({
   // Check decryption requirements (needed for unwrap since we encrypt the amount)
   const decryptionStatus = getDecryptionRequirements()
 
-  const { requests: unwrapRequests, isLoading: isLoadingRequests, error: requestsError, refetch: refetchRequests } = useUnwrapRequests()
+  const {
+    requests: unwrapRequests,
+    isLoading: isLoadingRequests,
+    error: requestsError,
+    refetch: refetchRequests,
+  } = useUnwrapRequests()
 
   const {
     unwrapTokens,
-    isUnwrapping,
+    isLoading: isUnwrapping,
     isConfirmed: isUnwrapConfirmed,
-    unwrapError,
-  } = useUnwrapToken(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-    for (let i = 0; i < 3; i++) {
-      await refetchRequests()
-      if (i < 2) {
-        await new Promise((resolve) => setTimeout(resolve, 2000))
-      }
-    }
-  })
+    error: unwrapError,
+  } = useUnwrap(tokenPair.wrappedAddress || undefined)
 
   useEffect(() => {
-    if (isUnwrapConfirmed || unwrapError) {
+    if (isUnwrapConfirmed) {
       setIsPreparingUnwrap(false)
-      if (isUnwrapConfirmed) {
-        // Clear the decrypted balance cache after unwrapping
-        if (tokenPair.wrappedAddress) {
-          clearBalance(tokenPair.wrappedAddress)
-        }
-        setTimeout(() => {
-          onComplete?.()
-          setUnwrapAmount('')
-        }, 2000)
+      // Clear the decrypted balance cache after unwrapping
+      if (tokenPair.wrappedAddress) {
+        clearBalance(tokenPair.wrappedAddress)
       }
+
+      // Refetch unwrap requests to update the list
+      const refetch = async () => {
+        // Initial delay to allow indexer to catch up
+        await new Promise((resolve) => setTimeout(resolve, 3000))
+        // Poll for updates
+        for (let i = 0; i < 3; i++) {
+          await refetchRequests()
+          if (i < 2) {
+            await new Promise((resolve) => setTimeout(resolve, 2000))
+          }
+        }
+      }
+      refetch()
+
+      // Final UI updates
+      setTimeout(() => {
+        onComplete?.()
+        setUnwrapAmount('')
+      }, 2000)
+    } else if (unwrapError) {
+      setIsPreparingUnwrap(false)
     }
-  }, [isUnwrapConfirmed, unwrapError, onComplete, tokenPair.wrappedAddress, clearBalance])
+  }, [
+    isUnwrapConfirmed,
+    unwrapError,
+    onComplete,
+    tokenPair.wrappedAddress,
+    clearBalance,
+    refetchRequests,
+  ])
 
   const handleUnwrap = async () => {
     if (!unwrapAmount || !address || !isFHEReady || !fheInstance) return
@@ -492,12 +537,12 @@ function UnwrapTab({
         fheInstance,
         tokenPair.wrappedAddress!,
         address,
-        amountWei
+        amountWei,
       )
 
       unwrapTokens(
         toHex(handle) as `0x${string}`,
-        toHex(proof) as `0x${string}`
+        toHex(proof) as `0x${string}`,
       )
       setIsPreparingUnwrap(false)
     } catch (error) {
@@ -541,7 +586,9 @@ function UnwrapTab({
                   Confidential Token Not Created
                 </h4>
                 <p className="text-sm text-amber-700 dark:text-amber-300">
-                  You need to wrap {tokenPair.erc20Symbol} tokens first to create the confidential token wrapper. Go to the Wrap tab to get started.
+                  You need to wrap {tokenPair.erc20Symbol} tokens first to
+                  create the confidential token wrapper. Go to the Wrap tab to
+                  get started.
                 </p>
               </div>
             </div>
@@ -560,7 +607,8 @@ function UnwrapTab({
                   <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h4>
                 <p className="text-sm text-amber-700 dark:text-amber-300">
-                  {decryptionStatus.missingMessage}. Click to view system status details.
+                  {decryptionStatus.missingMessage}. Click to view system
+                  status details.
                 </p>
               </div>
             </button>
@@ -607,7 +655,9 @@ function UnwrapTab({
                   Decrypt Balance First
                 </h4>
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Click the eye icon on the Confidential Token balance card above to decrypt and verify your available balance before unwrapping.
+                  Click the eye icon on the Confidential Token balance card
+                  above to decrypt and verify your available balance before
+                  unwrapping.
                 </p>
               </div>
             </div>
@@ -615,11 +665,18 @@ function UnwrapTab({
 
           <button
             onClick={handleUnwrap}
-            disabled={!canUnwrap || isUnwrapping || isPreparingUnwrap || !tokenPair.wrappedAddress || !decryptionStatus.canDecrypt}
+            disabled={
+              !canUnwrap ||
+              isUnwrapping ||
+              isPreparingUnwrap ||
+              !tokenPair.wrappedAddress ||
+              !decryptionStatus.canDecrypt
+            }
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
             title={
               !decryptionStatus.canDecrypt
-                ? decryptionStatus.missingMessage || 'System requirements not met'
+                ? decryptionStatus.missingMessage ||
+                  'System requirements not met'
                 : 'Unwrap tokens'
             }
           >
@@ -654,7 +711,7 @@ function UnwrapTab({
           {unwrapError && (
             <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
               <AlertCircle className="h-4 w-4" />
-              <span>{unwrapError}</span>
+              <span>{formatErrorMessage(unwrapError)}</span>
             </div>
           )}
 
@@ -690,7 +747,8 @@ function TransferTab({
 }) {
   const { address } = useAccount()
   const { isFHEReady, fheError } = useFHEContext()
-  const { getBalanceState, clearBalance, getDecryptionRequirements } = useConfidentialBalance()
+  const { getBalanceState, clearBalance, getDecryptionRequirements } =
+    useConfidentialBalance()
   const sidebar = useSidebar()
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('')
@@ -711,7 +769,6 @@ function TransferTab({
   const {
     transfer,
     isLoading: isTransferLoading,
-    isInitiating,
     isConfirmed,
     error: transferError,
     canTransfer,
@@ -761,7 +818,9 @@ function TransferTab({
                 Confidential Token Not Created
               </h4>
               <p className="text-sm text-amber-700 dark:text-amber-300">
-                You need to wrap {tokenPair.erc20Symbol} tokens first to create the confidential token wrapper. Go to the Wrap tab to get started.
+                You need to wrap {tokenPair.erc20Symbol} tokens first to create
+                the confidential token wrapper. Go to the Wrap tab to get
+                started.
               </p>
             </div>
           </div>
@@ -780,26 +839,31 @@ function TransferTab({
                 <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
               </h4>
               <p className="text-sm text-amber-700 dark:text-amber-300">
-                {decryptionStatus.missingMessage}. Click to view system status details.
+                {decryptionStatus.missingMessage}. Click to view system status
+                details.
               </p>
             </div>
           </button>
         )}
 
         {/* Warning if balance not decrypted */}
-        {tokenPair.wrappedAddress && !isBalanceVisible && decryptionStatus.canDecrypt && (
-          <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                Decrypt Balance First
-              </h4>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                Click the eye icon on the Confidential Token balance card above to decrypt and verify your available balance before transferring.
-              </p>
+        {tokenPair.wrappedAddress &&
+          !isBalanceVisible &&
+          decryptionStatus.canDecrypt && (
+            <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                  Decrypt Balance First
+                </h4>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Click the eye icon on the Confidential Token balance card
+                  above to decrypt and verify your available balance before
+                  transferring.
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         <div>
           <label className="block text-sm font-medium mb-2">
@@ -834,7 +898,9 @@ function TransferTab({
             {!tokenPair.wrappedAddress
               ? 'Confidential token not created yet'
               : isBalanceVisible && balanceState?.decryptedBalance
-              ? `Available: ${formatTokenAmount(balanceState.decryptedBalance)} c${tokenPair.erc20Symbol}`
+              ? `Available: ${formatTokenAmount(
+                  balanceState.decryptedBalance,
+                )} c${tokenPair.erc20Symbol}`
               : 'This amount will be encrypted and hidden from everyone except you and the recipient'}
           </p>
         </div>
@@ -871,21 +937,24 @@ function TransferTab({
         <button
           onClick={handleTransfer}
           disabled={
-            !address || !recipient || !amount || isTransferLoading || !canTransfer || !tokenPair.wrappedAddress || !decryptionStatus.canDecrypt
+            !address ||
+            !recipient ||
+            !amount ||
+            isTransferLoading ||
+            !canTransfer ||
+            !tokenPair.wrappedAddress ||
+            !decryptionStatus.canDecrypt
           }
-          className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-medium hover:opacity-90 active:scale-95 active:opacity-75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${
-            isInitiating ? 'scale-95 opacity-75' : ''
-          }`}
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-medium hover:opacity-90 active:scale-95 active:opacity-75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200`}
           title={
             !decryptionStatus.canDecrypt
-              ? decryptionStatus.missingMessage || 'System requirements not met'
+              ? decryptionStatus.missingMessage ||
+                'System requirements not met'
               : 'Send confidential transfer'
           }
         >
           {!isFHEReady && !fheError
             ? 'Initializing FHE...'
-            : isInitiating
-            ? 'Preparing Transaction...'
             : isTransferLoading
             ? 'Processing Transfer...'
             : 'Send Confidential Transfer'}
@@ -907,7 +976,7 @@ function TransferTab({
         {transferError && (
           <div className="flex items-center justify-center gap-2 text-center text-sm text-red-600 dark:text-red-400">
             <AlertCircle className="h-4 w-4" />
-            <span>{transferError}</span>
+            <span>{formatErrorMessage(transferError)}</span>
           </div>
         )}
 
