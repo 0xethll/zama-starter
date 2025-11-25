@@ -90,14 +90,6 @@ interface FHEContextType {
 
     // Signer state
     signer: Signer | null
-
-    // Balance state (for UI state management only)
-    decryptedBalance: bigint | null
-    isBalanceVisible: boolean
-
-    // Balance actions
-    setDecryptedBalance: (balance: bigint | null) => void
-    setIsBalanceVisible: (visible: boolean) => void
 }
 
 const FHEContext = createContext<FHEContextType | null>(null)
@@ -111,10 +103,6 @@ export function FHEProvider({ children }: FHEProviderProps) {
     const config = useConfig()
 
     const [signer, setSigner] = useState<Signer | null>(null)
-    const [decryptedBalance, setDecryptedBalance] = useState<bigint | null>(
-        null,
-    )
-    const [isBalanceVisible, setIsBalanceVisible] = useState(false)
 
     const [fheError, setFheError] = useState<string | null>(globalError)
     const isMountedRef = useRef(true)
@@ -207,22 +195,12 @@ export function FHEProvider({ children }: FHEProviderProps) {
         initSigner()
     }, [config, address])
 
-    // Clear decrypted balance when address changes (wallet switch)
-    useEffect(() => {
-        setDecryptedBalance(null)
-        setIsBalanceVisible(false)
-    }, [address])
-
     const contextValue: FHEContextType = {
         isFHEReady: globalIsInitialized && !!globalFheInstance && !fheError,
         fheInstance: globalFheInstance,
         fheError,
         retryFHE,
         signer,
-        decryptedBalance,
-        isBalanceVisible,
-        setDecryptedBalance,
-        setIsBalanceVisible,
     }
 
     return (

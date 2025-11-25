@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   ArrowUpDown,
   Shield,
@@ -10,6 +10,7 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  ExternalLink,
 } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { formatUnits, parseUnits } from 'viem'
@@ -23,6 +24,8 @@ import {
 } from '@/hooks/useWrapUnwrap'
 import { useTransferContract } from '@/hooks/useTransferContract'
 import { useFHEContext } from '@/contexts/FHEContext'
+import { useConfidentialBalance } from '@/contexts/ConfidentialBalanceContext'
+import { useSidebar } from '@/contexts/SidebarContext'
 import { encryptUint64, formatTokenAmount } from '@/lib/fhe'
 import { UnwrapRequestsList } from '@/components/UnwrapRequestsList'
 import { useUnwrapRequests } from '@/hooks/useUnwrapRequests'
@@ -103,9 +106,14 @@ function WrapTab({
   onComplete?: () => void
 }) {
   const { address } = useAccount()
+  const { clearBalance } = useConfidentialBalance()
   const [wrapAmount, setWrapAmount] = useState('')
   const [currentStep, setCurrentStep] = useState<WrapStep | null>(null)
   const [completedSteps, setCompletedSteps] = useState<WrapStep[]>([])
+
+  // Refs to track if auto-continue has been triggered (prevent duplicate calls)
+  const approvalCompletedRef = useRef(false)
+  const wrapperCreatedContinuedRef = useRef(false)
 
   // Check if wrapper needs to be created
   const needsWrapperCreation = !tokenPair.wrappedAddress
@@ -124,6 +132,7 @@ function WrapTab({
     isApproving,
     isConfirmed: isApprovalConfirmed,
     approvalError,
+    resetApproval,
   } = useUsdApproval()
 
   const {
@@ -131,6 +140,7 @@ function WrapTab({
     isWrapping,
     isConfirmed: isWrapConfirmed,
     wrapError,
+    resetWrap,
   } = useWrapToken()
 
   // Handle wrapper creation completion
@@ -156,8 +166,10 @@ function WrapTab({
       tokenPair.wrappedAddress &&
       wrapAmount &&
       !currentStep &&
-      address
+      address &&
+      !wrapperCreatedContinuedRef.current  // Prevent duplicate execution
     ) {
+      wrapperCreatedContinuedRef.current = true
       console.log('✅ Wrapper created, auto-continuing to next step...')
 
       // Check if approval is needed
@@ -177,53 +189,102 @@ function WrapTab({
     }
   }, [
     tokenPair.wrappedAddress,
-    tokenPair.erc20Decimals,
     completedSteps,
     wrapAmount,
     currentStep,
     address,
-    usdAllowance,
-    approveTokens,
-    wrapTokens,
-  ])
+  ])  // Remove function dependencies
+
+  // Reset wrapper continued ref when wrapper address changes
+  useEffect(() => {
+    wrapperCreatedContinuedRef.current = false
+  }, [tokenPair.wrappedAddress])
 
   // Refetch allowance after approval and auto-continue to wrap
   useEffect(() => {
-    if (isApprovalConfirmed) {
+    if (isApprovalConfirmed && !approvalCompletedRef.current) {
+      approvalCompletedRef.current = true
       setCompletedSteps((prev) => [...prev, 'approve'])
       setCurrentStep(null)
       refetchAllowance()
+
       // Auto-continue to wrap step after allowance is refreshed
       setTimeout(() => {
-        if (wrapAmount) {
+        if (
+          wrapAmount &&
+          !completedSteps.includes('wrap') &&
+          !isWrapping &&
+          !currentStep
+        ) {
           console.log('✅ Approval completed, auto-continuing to wrap...')
           setCurrentStep('wrap')
           wrapTokens(wrapAmount)
         }
       }, 1000)
     }
-  }, [isApprovalConfirmed, refetchAllowance, wrapAmount, wrapTokens])
+  }, [isApprovalConfirmed, completedSteps, isWrapping, currentStep])  // Remove function dependencies
+
+  // Reset approval ref when approval state changes
+  useEffect(() => {
+    if (!isApprovalConfirmed) {
+      approvalCompletedRef.current = false
+    }
+  }, [isApprovalConfirmed])
 
   // Trigger parent refetch after successful wrap
   useEffect(() => {
     if (isWrapConfirmed) {
       setCompletedSteps((prev) => [...prev, 'wrap'])
       setCurrentStep(null)
+      // Clear the decrypted balance cache after wrapping
+      if (tokenPair.wrappedAddress) {
+        clearBalance(tokenPair.wrappedAddress)
+      }
       setTimeout(() => {
         onComplete?.()
         setWrapAmount('')
         setCompletedSteps([])
       }, 2000)
     }
-  }, [isWrapConfirmed, onComplete])
+  }, [isWrapConfirmed, onComplete, tokenPair.wrappedAddress, clearBalance])
 
-  // Reset progress on error (user rejection or execution failure)
+  // Handle wrapper creation error
   useEffect(() => {
-    if (wrapperError || approvalError || wrapError) {
+    if (wrapperError) {
       setCurrentStep(null)
-      setCompletedSteps([])
+      // Don't clear completedSteps - keep track of what was done
+      wrapperCreatedContinuedRef.current = false
     }
-  }, [wrapperError, approvalError, wrapError])
+  }, [wrapperError])
+
+  // Handle approval error - auto-clear after delay to allow retry
+  useEffect(() => {
+    if (approvalError) {
+      setCurrentStep(null)
+      approvalCompletedRef.current = false
+
+      // Auto-clear error after 3 seconds to allow retry
+      const timer = setTimeout(() => {
+        resetApproval()
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [approvalError, resetApproval])
+
+  // Handle wrap error - auto-clear after delay to allow retry
+  useEffect(() => {
+    if (wrapError) {
+      setCurrentStep(null)
+
+      // Auto-clear error after 3 seconds to allow retry
+      const timer = setTimeout(() => {
+        resetWrap()
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [wrapError, resetWrap])
 
   // Handle unified wrap action
   const handleWrapAction = async () => {
@@ -368,10 +429,24 @@ function UnwrapTab({
   onComplete?: () => void
 }) {
   const { address } = useAccount()
-  const { isFHEReady, fheInstance, fheError, isBalanceVisible, decryptedBalance } =
-    useFHEContext()
+  const { isFHEReady, fheInstance, fheError } = useFHEContext()
+  const { getBalanceState, clearBalance, getDecryptionRequirements } = useConfidentialBalance()
+  const sidebar = useSidebar()
   const [unwrapAmount, setUnwrapAmount] = useState('')
   const [isPreparingUnwrap, setIsPreparingUnwrap] = useState(false)
+
+  // Get balance state for this specific token
+  const balanceState = tokenPair.wrappedAddress
+    ? getBalanceState(tokenPair.wrappedAddress)
+    : null
+
+  const isBalanceVisible =
+    balanceState?.decryptedBalance !== null &&
+    balanceState?.decryptedBalance !== undefined &&
+    !balanceState?.error
+
+  // Check decryption requirements (needed for unwrap since we encrypt the amount)
+  const decryptionStatus = getDecryptionRequirements()
 
   const { requests: unwrapRequests, isLoading: isLoadingRequests, error: requestsError, refetch: refetchRequests } = useUnwrapRequests()
 
@@ -394,13 +469,17 @@ function UnwrapTab({
     if (isUnwrapConfirmed || unwrapError) {
       setIsPreparingUnwrap(false)
       if (isUnwrapConfirmed) {
+        // Clear the decrypted balance cache after unwrapping
+        if (tokenPair.wrappedAddress) {
+          clearBalance(tokenPair.wrappedAddress)
+        }
         setTimeout(() => {
           onComplete?.()
           setUnwrapAmount('')
         }, 2000)
       }
     }
-  }, [isUnwrapConfirmed, unwrapError, onComplete])
+  }, [isUnwrapConfirmed, unwrapError, onComplete, tokenPair.wrappedAddress, clearBalance])
 
   const handleUnwrap = async () => {
     if (!unwrapAmount || !address || !isFHEReady || !fheInstance) return
@@ -428,8 +507,8 @@ function UnwrapTab({
   }
 
   const maxUnwrapAmount =
-    isBalanceVisible && decryptedBalance
-      ? formatTokenAmount(decryptedBalance)
+    balanceState?.decryptedBalance
+      ? formatTokenAmount(balanceState.decryptedBalance)
       : '0'
 
   const canUnwrap =
@@ -466,6 +545,25 @@ function UnwrapTab({
                 </p>
               </div>
             </div>
+          )}
+
+          {/* Warning if system requirements not met */}
+          {tokenPair.wrappedAddress && !decryptionStatus.canDecrypt && (
+            <button
+              onClick={() => sidebar.open()}
+              className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg w-full text-left hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors group"
+            >
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-1 flex items-center gap-2">
+                  System Requirements Not Met
+                  <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h4>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  {decryptionStatus.missingMessage}. Click to view system status details.
+                </p>
+              </div>
+            </button>
           )}
 
           <div>
@@ -517,8 +615,13 @@ function UnwrapTab({
 
           <button
             onClick={handleUnwrap}
-            disabled={!canUnwrap || isUnwrapping || isPreparingUnwrap || !tokenPair.wrappedAddress}
+            disabled={!canUnwrap || isUnwrapping || isPreparingUnwrap || !tokenPair.wrappedAddress || !decryptionStatus.canDecrypt}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+            title={
+              !decryptionStatus.canDecrypt
+                ? decryptionStatus.missingMessage || 'System requirements not met'
+                : 'Unwrap tokens'
+            }
           >
             {isPreparingUnwrap ? (
               <>
@@ -586,9 +689,24 @@ function TransferTab({
   onComplete?: () => void
 }) {
   const { address } = useAccount()
-  const { isFHEReady, fheError, isBalanceVisible, decryptedBalance } = useFHEContext()
+  const { isFHEReady, fheError } = useFHEContext()
+  const { getBalanceState, clearBalance, getDecryptionRequirements } = useConfidentialBalance()
+  const sidebar = useSidebar()
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('')
+
+  // Get balance state for this specific token
+  const balanceState = tokenPair.wrappedAddress
+    ? getBalanceState(tokenPair.wrappedAddress)
+    : null
+
+  const isBalanceVisible =
+    balanceState?.decryptedBalance !== null &&
+    balanceState?.decryptedBalance !== undefined &&
+    !balanceState?.error
+
+  // Check decryption requirements (needed for transfer since we use FHE)
+  const decryptionStatus = getDecryptionRequirements()
 
   const {
     transfer,
@@ -602,13 +720,17 @@ function TransferTab({
 
   useEffect(() => {
     if (isConfirmed) {
+      // Clear the decrypted balance cache after transfer
+      if (tokenPair.wrappedAddress) {
+        clearBalance(tokenPair.wrappedAddress)
+      }
       setTimeout(() => {
         onComplete?.()
         setRecipient('')
         setAmount('')
       }, 2000)
     }
-  }, [isConfirmed, onComplete])
+  }, [isConfirmed, onComplete, tokenPair.wrappedAddress, clearBalance])
 
   const handleTransfer = async () => {
     try {
@@ -645,8 +767,27 @@ function TransferTab({
           </div>
         )}
 
+        {/* Warning if system requirements not met */}
+        {tokenPair.wrappedAddress && !decryptionStatus.canDecrypt && (
+          <button
+            onClick={() => sidebar.open()}
+            className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg w-full text-left hover:bg-amber-100 dark:hover:bg-amber-900 transition-colors group"
+          >
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-1 flex items-center gap-2">
+                System Requirements Not Met
+                <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </h4>
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                {decryptionStatus.missingMessage}. Click to view system status details.
+              </p>
+            </div>
+          </button>
+        )}
+
         {/* Warning if balance not decrypted */}
-        {tokenPair.wrappedAddress && !isBalanceVisible && (
+        {tokenPair.wrappedAddress && !isBalanceVisible && decryptionStatus.canDecrypt && (
           <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
             <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
@@ -692,8 +833,8 @@ function TransferTab({
           <p className="text-xs text-gray-500 mt-1">
             {!tokenPair.wrappedAddress
               ? 'Confidential token not created yet'
-              : isBalanceVisible && decryptedBalance
-              ? `Available: ${formatTokenAmount(decryptedBalance)} c${tokenPair.erc20Symbol}`
+              : isBalanceVisible && balanceState?.decryptedBalance
+              ? `Available: ${formatTokenAmount(balanceState.decryptedBalance)} c${tokenPair.erc20Symbol}`
               : 'This amount will be encrypted and hidden from everyone except you and the recipient'}
           </p>
         </div>
@@ -730,11 +871,16 @@ function TransferTab({
         <button
           onClick={handleTransfer}
           disabled={
-            !address || !recipient || !amount || isTransferLoading || !canTransfer || !tokenPair.wrappedAddress
+            !address || !recipient || !amount || isTransferLoading || !canTransfer || !tokenPair.wrappedAddress || !decryptionStatus.canDecrypt
           }
           className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-medium hover:opacity-90 active:scale-95 active:opacity-75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${
             isInitiating ? 'scale-95 opacity-75' : ''
           }`}
+          title={
+            !decryptionStatus.canDecrypt
+              ? decryptionStatus.missingMessage || 'System requirements not met'
+              : 'Send confidential transfer'
+          }
         >
           {!isFHEReady && !fheError
             ? 'Initializing FHE...'

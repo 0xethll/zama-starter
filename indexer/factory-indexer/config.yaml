@@ -5,7 +5,7 @@ field_selection:
     - hash
 networks:
 - id: 11155111
-  start_block: 0
+  start_block: 9702426
   contracts:
   - name: ConfidentialTokenFactory
     address:

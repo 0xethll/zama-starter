@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ConnectKitButton } from 'connectkit'
 import {
   Shield,
-  ArrowUpDown,
   Package,
   Coins,
   FileText,
@@ -16,12 +15,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { TokenBalance } from './TokenBalance'
+import { DecryptionStatusPanel } from './DecryptionStatusPanel'
 import { useSidebar } from '@/contexts/SidebarContext'
 
 const navigation = [
   { name: 'Overview', href: '/', icon: FileText, gradient: 'from-blue-500 to-cyan-500' },
-  { name: 'Token Transfer', href: '/transfer', icon: ArrowUpDown, gradient: 'from-purple-500 to-pink-500' },
-  { name: 'Wrap & Unwrap', href: '/wrap', icon: Package, gradient: 'from-green-500 to-emerald-500' },
+  { name: 'Token Manager', href: '/tokens', icon: Package, gradient: 'from-purple-500 to-pink-500' },
   { name: 'Faucet', href: '/faucet', icon: Coins, gradient: 'from-yellow-500 to-orange-500' },
 ]
 
@@ -173,6 +172,9 @@ export function Sidebar() {
                 <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-200/30 dark:border-blue-800/30">
                   <TokenBalance />
                 </div>
+
+                {/* System Status Panel */}
+                <DecryptionStatusPanel />
 
                 {/* Network Badge */}
                 <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-100 dark:bg-green-950/30 border border-green-300 dark:border-green-800">
