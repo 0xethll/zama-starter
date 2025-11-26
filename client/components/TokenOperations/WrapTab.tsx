@@ -178,6 +178,9 @@ export function WrapTab({
   // Trigger parent refetch after successful wrap
   useEffect(() => {
     if (isWrapConfirmed) {
+      console.log("🚩 wrap confirmed, reftch token balance")
+      resetWrap()
+
       setCompletedSteps((prev) => [...prev, 'wrap'])
       setCurrentStep(null)
       // Clear the decrypted balance cache after wrapping
@@ -190,7 +193,7 @@ export function WrapTab({
         setCompletedSteps([])
       }, 2000)
     }
-  }, [isWrapConfirmed, onComplete, tokenPair.wrappedAddress, clearBalance])
+  }, [isWrapConfirmed, onComplete, tokenPair.wrappedAddress, clearBalance, resetWrap])
 
   // Handle wrapper creation error
   useEffect(() => {

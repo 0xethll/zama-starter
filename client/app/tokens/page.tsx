@@ -34,7 +34,8 @@ export default function TokensPage() {
         setSelectedPair(updatedPair)
       }
     }
-  }, [selectedPair, tokenPairs])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenPairs])
 
   const handleOperationComplete = useCallback(() => {
     // Refetch token list after an operation completes

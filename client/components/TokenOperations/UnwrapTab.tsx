@@ -60,10 +60,13 @@ export function UnwrapTab({
     isLoading: isUnwrapping,
     isConfirmed: isUnwrapConfirmed,
     error: unwrapError,
+    reset: resetUnwrap,
   } = useUnwrap(tokenPair.wrappedAddress || undefined)
 
   useEffect(() => {
     if (isUnwrapConfirmed) {
+      resetUnwrap()
+
       setIsPreparingUnwrap(false)
       // Clear the decrypted balance cache after unwrapping
       if (tokenPair.wrappedAddress) {
@@ -99,6 +102,7 @@ export function UnwrapTab({
     tokenPair.wrappedAddress,
     clearBalance,
     refetchRequests,
+    resetUnwrap,
   ])
 
   const handleUnwrap = async () => {

@@ -51,6 +51,7 @@ export function TransferTab({
     error: transferError,
     canTransfer,
     txHash,
+    reset: resetTransfer,
   } = useTransferContract()
 
   useEffect(() => {
@@ -63,9 +64,10 @@ export function TransferTab({
         onComplete?.()
         setRecipient('')
         setAmount('')
+        resetTransfer()
       }, 2000)
     }
-  }, [isConfirmed, onComplete, tokenPair.wrappedAddress, clearBalance])
+  }, [isConfirmed, onComplete, tokenPair.wrappedAddress, clearBalance, resetTransfer])
 
   const handleTransfer = async () => {
     try {
