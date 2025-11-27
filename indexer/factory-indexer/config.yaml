@@ -16,8 +16,8 @@ networks:
   - name: ConfidentialERC20Wrapper
     handler: src/EventHandlers.ts
     events:
-    - event: ConfidentialTransfer(address indexed from, address indexed to, bytes32 amount)
+    - event: ConfidentialTransfer(address indexed from, address indexed to, bytes32 indexed amount)
     - event: UnwrapRequested(address indexed receiver, bytes32 amount)
-    - event: UnwrapFinalized(address indexed receiver, bytes32 encryptedAmount, uint256 cleartextAmount)
+    - event: UnwrapFinalized(address indexed receiver, bytes32 encryptedAmount, uint64 cleartextAmount)
 unordered_multichain_mode: true
 preload_handlers: true
