@@ -2,6 +2,8 @@
 
 import { UnwrapRequest } from '@/hooks/useUnwrapRequests'
 import { useFinalizeUnwrap } from '@/hooks/useFinalizeUnwrap'
+import { useDecryptedAmounts } from '@/hooks/useDecryptedAmounts'
+import { useFHEContext } from '@/contexts/FHEContext'
 import { UnwrapRequestItem } from './UnwrapRequestItem'
 import { Loader2, AlertCircle, ClipboardList } from 'lucide-react'
 
@@ -18,8 +20,12 @@ interface UnwrapRequestsListProps {
  * Fetches data from Envio indexer and allows users to finalize requests
  */
 export function UnwrapRequestsList({ requests, isLoading, error, refetch, onFinalizeSuccess }: UnwrapRequestsListProps) {
+    const { fheInstance } = useFHEContext()
 
-    const { finalizeUnwrap, isFinalizing, pendingTx } = useFinalizeUnwrap(onFinalizeSuccess)
+    // Asynchronously decrypt amounts for all requests
+    const decryptedCache = useDecryptedAmounts(requests, fheInstance)
+
+    const { finalizeUnwrap, isFinalizing, pendingTx } = useFinalizeUnwrap(onFinalizeSuccess, decryptedCache)
 
     // Initial loading state (only show full spinner when no data)
     if (isLoading && requests.length === 0) {
@@ -87,6 +93,7 @@ export function UnwrapRequestsList({ requests, isLoading, error, refetch, onFina
                     onFinalize={finalizeUnwrap}
                     isFinalizing={isFinalizing}
                     pendingTx={pendingTx}
+                    decryptionResult={decryptedCache.get(request.burntAmount)}
                 />
             ))}
         </div>

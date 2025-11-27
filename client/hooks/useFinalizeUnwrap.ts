@@ -4,13 +4,18 @@ import { useState, useEffect, useRef } from 'react'
 
 import { useFHEContext } from '@/contexts/FHEContext'
 import { decryptPublicly } from '@/lib/fhe'
+import { type DecryptionResult } from './useDecryptedAmounts'
 
 /**
  * Hook to finalize unwrap requests
  * @param {Function} onSuccess - Callback to execute on successful finalization
+ * @param {Map} decryptedCache - Optional cache of pre-decrypted amounts
  * @returns {Object} finalizeUnwrap function, loading state, success state, and error
  */
-export function useFinalizeUnwrap(onSuccess?: () => void) {
+export function useFinalizeUnwrap(
+    onSuccess?: () => void,
+    decryptedCache?: Map<string, DecryptionResult>
+) {
     const {isFHEReady, fheInstance} = useFHEContext()
 
     // Track which transaction is currently pending
@@ -51,7 +56,22 @@ export function useFinalizeUnwrap(onSuccess?: () => void) {
         setPendingTx(burntAmount)
 
         if (!fheInstance) return
-        const [cleartextAmount, proof] = await decryptPublicly(fheInstance, burntAmount)
+
+        // Try to use cached decryption result first
+        let cleartextAmount: bigint
+        let proof: `0x${string}`
+
+        const cached = decryptedCache?.get(burntAmount)
+        if (cached && cached.status === 'success') {
+            // Use cached result
+            cleartextAmount = cached.cleartextAmount
+            proof = cached.proof
+        } else {
+            // Decrypt on-demand if not in cache
+            const [amount, decryptionProof] = await decryptPublicly(fheInstance, burntAmount)
+            cleartextAmount = amount
+            proof = decryptionProof
+        }
 
         writeContract({
             address: tokenAddress,
