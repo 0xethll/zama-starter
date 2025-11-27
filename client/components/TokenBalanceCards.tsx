@@ -9,6 +9,7 @@ import { useConfidentialBalance } from '@/contexts/ConfidentialBalanceContext'
 import { formatTokenAmount } from '@/lib/fhe'
 import { TokenIcon } from './TokenIcon'
 import { useSidebar } from '@/contexts/SidebarContext'
+import { formatErrorMessage } from '@/lib/utils'
 
 interface TokenBalanceCardsProps {
   tokenPair: TokenPair
@@ -144,7 +145,7 @@ export function TokenBalanceCards({ tokenPair }: TokenBalanceCardsProps) {
             {balanceState?.error ? (
               <div className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 mt-2">
                 <AlertCircle className="h-3 w-3" />
-                <span>{balanceState.error}</span>
+                <span>{formatErrorMessage(balanceState.error)}</span>
               </div>
             ) : !decryptionStatus.canDecrypt ? (
               <button

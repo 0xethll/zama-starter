@@ -13,7 +13,7 @@ import { Coins } from 'lucide-react'
 import { TokenBalanceCards } from '@/components/TokenBalanceCards'
 
 export default function TokensPage() {
-  const { tokenPairs, isLoading, isInitialized, error, refetch } = useTokenList()
+  const { tokenPairs, isLoading, isInitialized, error, refetch, updateSingleTokenBalance } = useTokenList()
   const [selectedPair, setSelectedPair] = useState<TokenPair | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
@@ -81,6 +81,7 @@ export default function TokensPage() {
               <TokenOperationsTabs
                 tokenPair={selectedPair}
                 onOperationComplete={handleOperationComplete}
+                onTokenBalanceUpdate={updateSingleTokenBalance}
               />
             </div>
           )}

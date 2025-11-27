@@ -10,26 +10,16 @@ interface UnwrapRequestsListProps {
     isLoading: boolean
     error?: string
     refetch: () => void
+    onFinalizeSuccess?: () => void
 }
 
 /**
  * Component that displays a list of pending unwrap requests
  * Fetches data from Envio indexer and allows users to finalize requests
  */
-export function UnwrapRequestsList({ requests, isLoading, error, refetch }: UnwrapRequestsListProps) {
+export function UnwrapRequestsList({ requests, isLoading, error, refetch, onFinalizeSuccess }: UnwrapRequestsListProps) {
 
-    const { finalizeUnwrap, isFinalizing, pendingTx } = useFinalizeUnwrap(async () => {
-        // Wait for indexer to process the transaction
-        await new Promise(resolve => setTimeout(resolve, 3000))
-
-        // Retry refetch multiple times to ensure indexer has updated
-        for (let i = 0; i < 3; i++) {
-            await refetch()
-            if (i < 2) {
-                await new Promise(resolve => setTimeout(resolve, 2000))
-            }
-        }
-    })
+    const { finalizeUnwrap, isFinalizing, pendingTx } = useFinalizeUnwrap(onFinalizeSuccess)
 
     // Initial loading state (only show full spinner when no data)
     if (isLoading && requests.length === 0) {

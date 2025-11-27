@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   DollarSign,
   CheckCircle,
@@ -25,6 +25,7 @@ import type { TabComponentProps } from './types'
 
 export function UnwrapTab({
   tokenPair,
+  onTokenBalanceUpdate,
 }: TabComponentProps) {
   const { address } = useAccount()
   const { isFHEReady, fheInstance, fheError } = useFHEContext()
@@ -48,11 +49,11 @@ export function UnwrapTab({
   const decryptionStatus = getDecryptionRequirements()
 
   const {
-    requests: unwrapRequests,
+    unwrapRequests,
     isLoading: isLoadingRequests,
     error: requestsError,
     refetch: refetchRequests,
-  } = useUnwrapRequests()
+  } = useUnwrapRequests(tokenPair.wrappedAddress as `0x${string}`)
 
   const {
     unwrapTokens,
@@ -60,6 +61,18 @@ export function UnwrapTab({
     isConfirmed: isUnwrapConfirmed,
     error: unwrapError,
   } = useUnwrap(tokenPair.wrappedAddress || undefined)
+
+  // Callback when finalize unwrap succeeds
+  const handleFinalizeSuccess = useCallback(async () => {
+    // 1. Update ERC20 token balance (the unwrapped token)
+    onTokenBalanceUpdate?.(tokenPair.erc20Address)
+
+    // Wait for indexer to catch up with blockchain data
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+
+    // 2. Update unwrap requests list
+    await refetchRequests()
+  }, [refetchRequests, onTokenBalanceUpdate, tokenPair.erc20Address])
 
   useEffect(() => {
     if (isUnwrapConfirmed) {
@@ -75,13 +88,8 @@ export function UnwrapTab({
       const refetch = async () => {
         // Initial delay to allow indexer to catch up
         await new Promise((resolve) => setTimeout(resolve, 3000))
-        // Poll for updates
-        for (let i = 0; i < 3; i++) {
-          await refetchRequests()
-          if (i < 2) {
-            await new Promise((resolve) => setTimeout(resolve, 2000))
-          }
-        }
+        
+        await refetchRequests()
       }
       refetch()
     } else if (unwrapError) {
@@ -99,6 +107,8 @@ export function UnwrapTab({
     if (!unwrapAmount || !address || !isFHEReady || !fheInstance) return
 
     setIsPreparingUnwrap(true)
+
+    await new Promise(resolve => setTimeout(resolve, 0))
 
     try {
       const amountWei = parseUnits(unwrapAmount, tokenPair.erc20Decimals)
@@ -294,6 +304,7 @@ export function UnwrapTab({
           isLoading={isLoadingRequests}
           error={requestsError}
           refetch={refetchRequests}
+          onFinalizeSuccess={handleFinalizeSuccess}
         />
       )}
     </div>

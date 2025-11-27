@@ -8,7 +8,8 @@ import { UnwrapRequest } from '@/hooks/useUnwrapRequests'
 interface UnwrapRequestItemProps {
     request: UnwrapRequest
     onFinalize: (
-        burntAmount: `0x${string}`
+        burntAmount: `0x${string}`,
+        tokenAddress: `0x${string}`
     ) => void
     isFinalizing: boolean
     pendingTx: string | null
@@ -28,7 +29,10 @@ export function UnwrapRequestItem({
     const canFinalize = !request.isFinalized && !isFinalizing
 
     const handleFinalize = async () =>  {
-        onFinalize(request.burntAmount as `0x${string}`)
+        onFinalize(
+            request.burntAmount as `0x${string}`,
+            request.tokenAddress as `0x${string}`
+        )
     }
 
     return (

@@ -3,13 +3,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useReadContract } from 'wagmi'
-import { Alchemy, Network } from 'alchemy-sdk'
 import { MAINSTREAM_TOKENS, getMainstreamTokenInfo } from '@/lib/tokens'
 import { useCustomTokens } from '@/contexts/CustomTokensContext'
 import { CONTRACTS } from '@/lib/contracts'
 import type { Address } from 'viem'
 import { readContract } from '@wagmi/core'
 import { config } from '@/lib/wagmi'
+import { alchemyClient } from '@/lib/alchemy'
 
 export interface TokenPair {
   // ERC20 token info
@@ -100,27 +100,16 @@ export function useTokenList() {
 
       console.log('🔄 Wallet connected - fetching balances...')
 
-      // 4. Initialize Alchemy SDK for balance queries
-      const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
-      if (!apiKey || apiKey === 'your_alchemy_api_key_here') {
-        throw new Error('Alchemy API key not configured. Please add NEXT_PUBLIC_ALCHEMY_API_KEY to your .env file')
-      }
+      // 4. Fetch ERC20 balances asynchronously (single batch call - fast)
+      const balancesPromise = alchemyClient.core.getTokenBalances(address, allTokenAddresses)
 
-      const alchemy = new Alchemy({
-        apiKey,
-        network: Network.ETH_SEPOLIA,
-      })
-
-      // 5. Fetch ERC20 balances asynchronously (single batch call - fast)
-      const balancesPromise = alchemy.core.getTokenBalances(address, allTokenAddresses)
-
-      // 6. Fetch metadata for custom tokens asynchronously (parallel)
+      // 5. Fetch metadata for custom tokens asynchronously (parallel)
       const metadataPromises = allTokenAddresses.map(async (tokenAddress) => {
         const tokenInfo = getMainstreamTokenInfo(tokenAddress)
         if (tokenInfo) return { address: tokenAddress, info: tokenInfo }
 
         try {
-          const metadata = await alchemy.core.getTokenMetadata(tokenAddress)
+          const metadata = await alchemyClient.core.getTokenMetadata(tokenAddress)
           return {
             address: tokenAddress,
             info: {
@@ -146,7 +135,7 @@ export function useTokenList() {
         }
       })
 
-      // 7. Fetch wrapped addresses asynchronously (parallel)
+      // 6. Fetch wrapped addresses asynchronously (parallel)
       const wrappedAddressPromises = allTokenAddresses.map((tokenAddress) =>
         getWrappedAddress(tokenAddress as Address).then((wrapped) => ({
           erc20Address: tokenAddress,
@@ -154,24 +143,24 @@ export function useTokenList() {
         }))
       )
 
-      // 8. Wait for all async operations and update progressively
+      // 7. Wait for all async operations and update progressively
       const [balances, metadataResults, wrappedResults] = await Promise.all([
         balancesPromise,
         Promise.all(metadataPromises),
         Promise.all(wrappedAddressPromises),
       ])
 
-      // 9. Create metadata map for quick lookup
+      // 8. Create metadata map for quick lookup
       const metadataMap = new Map(
         metadataResults.map((r) => [r.address.toLowerCase(), r.info])
       )
 
-      // 10. Create wrapped address map for quick lookup
+      // 9. Create wrapped address map for quick lookup
       const wrappedMap = new Map(
         wrappedResults.map((r) => [r.erc20Address.toLowerCase(), r.wrappedAddress])
       )
 
-      // 11. Fetch wrapped balances for tokens that have wrappers (parallel)
+      // 10. Fetch wrapped balances for tokens that have wrappers (parallel)
       const wrappedBalancePromises = wrappedResults
         .filter((r) => r.wrappedAddress)
         .map((r) =>
@@ -186,7 +175,7 @@ export function useTokenList() {
         wrappedBalances.map((r) => [r.wrappedAddress.toLowerCase(), r.balance])
       )
 
-      // 12. Build final pairs with all data
+      // 11. Build final pairs with all data
       const finalPairs: TokenPair[] = balances.tokenBalances.map((balance) => {
         const tokenAddress = balance.contractAddress.toLowerCase()
         const tokenInfo = metadataMap.get(tokenAddress)!
@@ -208,7 +197,7 @@ export function useTokenList() {
         }
       })
 
-      // 13. Sort: mainstream first, then by balance
+      // 12. Sort: mainstream first, then by balance
       finalPairs.sort((a, b) => {
         if (a.isMainstream !== b.isMainstream) {
           return a.isMainstream ? -1 : 1
@@ -219,7 +208,7 @@ export function useTokenList() {
         return -1
       })
 
-      // 14. Update with complete data
+      // 13. Update with complete data
       setTokenPairs(finalPairs)
     } catch (err) {
       console.error('Failed to fetch token pairs:', err)
@@ -230,6 +219,36 @@ export function useTokenList() {
       setIsInitialized(true) // Mark as initialized even on error
     }
   }, [address, customTokens])
+
+  /**
+   * Update balance for a single ERC20 token (optimized for single token updates)
+   */
+  const updateSingleTokenBalance = useCallback(
+    async (erc20Address: Address) => {
+      if (!address) return
+
+      try {
+        // Fetch balance for single token
+        const balanceResult = await alchemyClient.core.getTokenBalances(address, [erc20Address])
+        const balance = balanceResult.tokenBalances[0]
+
+        if (balance) {
+          // Update the specific token pair in state
+          setTokenPairs((prev) =>
+            prev.map((pair) =>
+              pair.erc20Address.toLowerCase() === erc20Address.toLowerCase()
+                ? { ...pair, erc20Balance: BigInt(balance.tokenBalance || '0') }
+                : pair
+            )
+          )
+          console.log(`✅ Updated balance for ${erc20Address}`)
+        }
+      } catch (error) {
+        console.error(`Failed to update balance for ${erc20Address}:`, error)
+      }
+    },
+    [address]
+  )
 
   // Fetch on mount and when dependencies change
   useEffect(() => {
@@ -242,6 +261,7 @@ export function useTokenList() {
     isInitialized,
     error,
     refetch: fetchTokenPairs,
+    updateSingleTokenBalance,
   }
 }
 
@@ -308,19 +328,8 @@ export function useTokenValidator() {
         throw new Error('Invalid Ethereum address format')
       }
 
-      // Initialize Alchemy
-      const apiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
-      if (!apiKey || apiKey === 'your_alchemy_api_key_here') {
-        throw new Error('Alchemy API key not configured')
-      }
-
-      const alchemy = new Alchemy({
-        apiKey,
-        network: Network.ETH_SEPOLIA,
-      })
-
       // Try to fetch token metadata
-      const metadata = await alchemy.core.getTokenMetadata(tokenAddress)
+      const metadata = await alchemyClient.core.getTokenMetadata(tokenAddress)
 
       if (!metadata.symbol) {
         throw new Error('Not a valid ERC20 token')

@@ -7,7 +7,7 @@ import { decryptPublicly } from '@/lib/fhe'
 
 /**
  * Hook to finalize unwrap requests
- * @param {Function} onSuccess - Callback function to execute after successful finalization
+ * @param {Function} onSuccess - Callback to execute on successful finalization
  * @returns {Object} finalizeUnwrap function, loading state, success state, and error
  */
 export function useFinalizeUnwrap(onSuccess?: () => void) {
@@ -15,12 +15,6 @@ export function useFinalizeUnwrap(onSuccess?: () => void) {
 
     // Track which transaction is currently pending
     const [pendingTx, setPendingTx] = useState<string | null>(null)
-
-    // Store onSuccess callback in ref to avoid it being a dependency
-    const onSuccessRef = useRef(onSuccess)
-    useEffect(() => {
-        onSuccessRef.current = onSuccess
-    }, [onSuccess])
 
     const {
         data: hash,
@@ -36,29 +30,31 @@ export function useFinalizeUnwrap(onSuccess?: () => void) {
     // Execute callback on successful finalization or clear pending on error
     useEffect(() => {
         if (isSuccess) {
-            onSuccessRef.current?.()
             setPendingTx(null)
+            onSuccess?.()
         } else if (isConfirmError) {
             setPendingTx(null)
         }
-    }, [isSuccess, isConfirmError])
+    }, [isSuccess, isConfirmError, onSuccess])
 
     /**
      * Finalize an unwrap request by providing the decrypted amount and proof
      * @param {string} burntAmount - The encrypted amount handle (bytes32)
+     * @param {string} tokenAddress - The wrapped token contract address
      * @param {bigint} cleartextAmount - The decrypted amount value
      * @param {string} proof - The decryption proof from FHEVM Gateway
      */
-    const finalizeUnwrap: (burntAmount: `0x${string}`) => Promise<void> = async (
-        burntAmount: `0x${string}`
-    ) => {
+    const finalizeUnwrap: (
+        burntAmount: `0x${string}`,
+        tokenAddress: `0x${string}`
+    ) => Promise<void> = async (burntAmount, tokenAddress) => {
         setPendingTx(burntAmount)
 
         if (!fheInstance) return
         const [cleartextAmount, proof] = await decryptPublicly(fheInstance, burntAmount)
 
         writeContract({
-            address: CONTRACTS.cUSD_ERC7984.address,
+            address: tokenAddress,
             abi: CONTRACTS.cUSD_ERC7984.abi,
             functionName: 'finalizeUnwrap',
             args: [burntAmount, cleartextAmount, proof],

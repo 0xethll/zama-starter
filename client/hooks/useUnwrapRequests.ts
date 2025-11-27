@@ -1,17 +1,20 @@
 import { useAccount } from 'wagmi'
 import { useState, useEffect, useCallback } from 'react'
 import { graphqlClient } from '@/lib/graphql-client'
+import { type Address } from 'viem'
+
 
 /**
  * GraphQL query to fetch unwrap requests for a specific recipient
  * Note: Envio/Hasura uses camelCase field names
  */
 const UNWRAP_REQUESTS_QUERY = `
-  query UnwrapRequests($recipient: String!, $isFinalized: Boolean!) {
-    ConfidentialUSDX402_UnwrapRequest(
+  query UnwrapRequests($recipient: String!, $isFinalized: Boolean!, $tokenAddress: String!) {
+    ConfidentialERC20Wrapper_UnwrapRequest(
       where: {
         recipient: { _eq: $recipient }
         isFinalized: { _eq: $isFinalized }
+        tokenAddress: { _eq: $tokenAddress }
       }
       order_by: { requestTimestamp: desc }
     ) {
@@ -26,6 +29,9 @@ const UNWRAP_REQUESTS_QUERY = `
       finalizedBlockNumber
       finalizedTransactionHash
       finalizedTimestamp
+      tokenAddress
+      tokenName
+      tokenSymbol
     }
   }
 `
@@ -45,21 +51,24 @@ export interface UnwrapRequest {
     finalizedBlockNumber?: string
     finalizedTransactionHash?: string
     finalizedTimestamp?: string
+    tokenAddress: string
+    tokenName: string
+    tokenSymbol: string
 }
 
 /**
  * Hook to fetch unwrap requests for the connected wallet
  * @returns {Object} requests, loading state, error, and refetch function
  */
-export function useUnwrapRequests() {
+export function useUnwrapRequests(wrappedTokenAddress: Address) {
     const { address } = useAccount()
-    const [requests, setRequests] = useState<UnwrapRequest[]>([])
+    const [unwrapRequests, setUnwrapRequests] = useState<UnwrapRequest[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | undefined>()
 
     const fetchRequests = useCallback(async () => {
-        if (!address) {
-            setRequests([])
+        if (!address || !wrappedTokenAddress) {
+            setUnwrapRequests([])
             return
         }
 
@@ -68,27 +77,28 @@ export function useUnwrapRequests() {
 
         try {
             const data = await graphqlClient.request<{
-                ConfidentialUSDX402_UnwrapRequest: UnwrapRequest[]
+                ConfidentialERC20Wrapper_UnwrapRequest: UnwrapRequest[]
             }>(UNWRAP_REQUESTS_QUERY, {
                 recipient: address,
                 isFinalized: false,
+                tokenAddress: wrappedTokenAddress
             })
 
-            setRequests(data.ConfidentialUSDX402_UnwrapRequest || [])
-        } catch (err: any) {
+            setUnwrapRequests(data.ConfidentialERC20Wrapper_UnwrapRequest || [])
+        } catch (err: unknown) {
             console.error('GraphQL Error:', err)
-            setError(err.message || 'Failed to fetch unwrap requests')
+            setError(err instanceof Error ? err.message : 'Failed to fetch unwrap requests')
         } finally {
             setIsLoading(false)
         }
-    }, [address])
+    }, [address, wrappedTokenAddress])
 
     useEffect(() => {
         fetchRequests()
     }, [fetchRequests])
 
     return {
-        requests,
+        unwrapRequests,
         isLoading,
         error,
         refetch: fetchRequests,

@@ -11,6 +11,7 @@ import type { TabType, TokenOperationsTabsProps } from './types'
 export function TokenOperationsTabs({
   tokenPair,
   onOperationComplete,
+  onTokenBalanceUpdate,
 }: TokenOperationsTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('wrap')
 
@@ -57,7 +58,11 @@ export function TokenOperationsTabs({
         <WrapTab tokenPair={tokenPair} onComplete={onOperationComplete} />
       )}
       {activeTab === 'unwrap' && (
-        <UnwrapTab tokenPair={tokenPair} onComplete={onOperationComplete} />
+        <UnwrapTab
+          tokenPair={tokenPair}
+          onComplete={onOperationComplete}
+          onTokenBalanceUpdate={onTokenBalanceUpdate}
+        />
       )}
       {activeTab === 'transfer' && (
         <TransferTab tokenPair={tokenPair} onComplete={onOperationComplete} />
