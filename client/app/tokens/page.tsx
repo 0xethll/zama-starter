@@ -19,10 +19,10 @@ export default function TokensPage() {
 
   // Auto-select first token pair when list loads
   useEffect(() => {
-    if (tokenPairs.length > 0 && !selectedPair) {
+    if (tokenPairs.length > 0) {
       setSelectedPair(tokenPairs[0])
     }
-  }, [tokenPairs, tokenPairs.length, selectedPair])
+  }, [tokenPairs, tokenPairs.length])
 
   // Sync selectedPair with tokenPairs updates (e.g., when balances load)
   useEffect(() => {

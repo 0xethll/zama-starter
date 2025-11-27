@@ -9,13 +9,13 @@ import {
 import { CONTRACTS } from '@/lib/contracts'
 import { useFHEContext } from '@/contexts/FHEContext'
 import { encryptUint64 } from '@/lib/fhe'
-import { toHex, isAddress } from 'viem'
+import { toHex, isAddress, type Address } from 'viem'
 import { useCUSDBalance } from './useTokenContract'
 
 /**
- * Hook to transfer Confidential USDs
+ * Hook to transfer Confidential tokens
  */
-export function useTransferContract() {
+export function useTransferContract(tokenAddress?: Address) {
   const { address, isConnected } = useAccount()
   const { isFHEReady, fheInstance } = useFHEContext()
   const { refetch: refetchBalance } = useCUSDBalance()
@@ -41,7 +41,7 @@ export function useTransferContract() {
   })
 
   const transfer = useCallback(
-    async (recipient: string, amount: number): Promise<void> => {
+    async (recipient: string, amount: bigint): Promise<void> => {
       setPreTxError(null)
 
       if (!isConnected) {
@@ -51,6 +51,11 @@ export function useTransferContract() {
 
       if (!address) {
         setPreTxError('No wallet address found')
+        return
+      }
+
+      if (!tokenAddress) {
+        setPreTxError('Token address not provided')
         return
       }
 
@@ -64,7 +69,7 @@ export function useTransferContract() {
         return
       }
 
-      if (!amount || amount <= 0) {
+      if (!amount || amount <= 0n) {
         setPreTxError('Please enter a valid amount')
         return
       }
@@ -76,14 +81,14 @@ export function useTransferContract() {
         // Encrypt the transfer amount
         const { handle, proof } = await encryptUint64(
           fheInstance,
-          CONTRACTS.cUSD_ERC7984.address,
+          tokenAddress,
           address,
-          BigInt(amount * 1000000),
+          amount,
         )
 
         // Call the transfer function
         transferTokens({
-          address: CONTRACTS.cUSD_ERC7984.address,
+          address: tokenAddress,
           abi: CONTRACTS.cUSD_ERC7984.abi,
           functionName: 'confidentialTransfer',
           args: [recipient, toHex(handle), toHex(proof)],
@@ -100,6 +105,7 @@ export function useTransferContract() {
     [
       isConnected,
       address,
+      tokenAddress,
       isFHEReady,
       fheInstance,
       resetWrite,

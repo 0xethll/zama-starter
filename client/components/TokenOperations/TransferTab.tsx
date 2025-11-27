@@ -11,6 +11,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { useAccount } from 'wagmi'
+import { parseUnits } from 'viem'
 import { useTransferContract } from '@/hooks/useTransferContract'
 import { useFHEContext } from '@/contexts/FHEContext'
 import { useConfidentialBalance } from '@/contexts/ConfidentialBalanceContext'
@@ -51,27 +52,33 @@ export function TransferTab({
     error: transferError,
     canTransfer,
     txHash,
-    reset: resetTransfer,
-  } = useTransferContract()
+  } = useTransferContract(tokenPair.wrappedAddress || undefined)
 
   useEffect(() => {
     if (isConfirmed) {
-      // Clear the decrypted balance cache after transfer
-      if (tokenPair.wrappedAddress) {
-        clearBalance(tokenPair.wrappedAddress)
-      }
-      setTimeout(() => {
-        onComplete?.()
-        setRecipient('')
-        setAmount('')
-        resetTransfer()
-      }, 2000)
+      setRecipient('')
+      setAmount('')
+      clearBalance(tokenPair.wrappedAddress as `0x${string}`)
     }
-  }, [isConfirmed, onComplete, tokenPair.wrappedAddress, clearBalance, resetTransfer])
+  }, [isConfirmed, clearBalance, tokenPair.wrappedAddress])
+
+  // Check if user has sufficient balance
+  const hasInsufficientBalance = (() => {
+    if (!isBalanceVisible || !balanceState?.decryptedBalance || !amount) {
+      return false
+    }
+    try {
+      const amountWei = parseUnits(amount, tokenPair.erc20Decimals)
+      return amountWei > balanceState.decryptedBalance
+    } catch {
+      // Invalid amount format
+      return false
+    }
+  })()
 
   const handleTransfer = async () => {
     try {
-      const transferAmount = parseInt(amount)
+      const transferAmount = parseUnits(amount, tokenPair.erc20Decimals)
       await transfer(recipient, transferAmount)
     } catch (error) {
       console.error('Transfer error:', error)
@@ -125,25 +132,6 @@ export function TransferTab({
             </div>
           </button>
         )}
-
-        {/* Warning if balance not decrypted */}
-        {tokenPair.wrappedAddress &&
-          !isBalanceVisible &&
-          decryptionStatus.canDecrypt && (
-            <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                  Decrypt Balance First
-                </h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Click the eye icon on the Confidential Token balance card
-                  above to decrypt and verify your available balance before
-                  transferring.
-                </p>
-              </div>
-            </div>
-          )}
 
         <div>
           <label className="block text-sm font-medium mb-2">
@@ -223,13 +211,19 @@ export function TransferTab({
             isTransferLoading ||
             !canTransfer ||
             !tokenPair.wrappedAddress ||
-            !decryptionStatus.canDecrypt
+            !decryptionStatus.canDecrypt ||
+            !isBalanceVisible ||
+            hasInsufficientBalance
           }
           className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md font-medium hover:opacity-90 active:scale-95 active:opacity-75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200`}
           title={
             !decryptionStatus.canDecrypt
               ? decryptionStatus.missingMessage ||
                 'System requirements not met'
+              : !isBalanceVisible
+              ? 'Please decrypt your balance first to verify available funds'
+              : hasInsufficientBalance
+              ? 'Insufficient balance'
               : 'Send confidential transfer'
           }
         >
@@ -239,6 +233,29 @@ export function TransferTab({
             ? 'Processing Transfer...'
             : 'Send Confidential Transfer'}
         </button>
+
+        {/* Warning if balance not decrypted */}
+        {!isBalanceVisible && decryptionStatus.canDecrypt && amount && (
+          <div className="flex items-center justify-center gap-2 text-center text-sm text-blue-600 dark:text-blue-400">
+            <AlertCircle className="h-4 w-4" />
+            <span>
+              Please decrypt your balance first. Click the eye icon on the
+              Confidential Token balance card above.
+            </span>
+          </div>
+        )}
+
+        {hasInsufficientBalance && (
+          <div className="flex items-center justify-center gap-2 text-center text-sm text-red-600 dark:text-red-400">
+            <AlertCircle className="h-4 w-4" />
+            <span>
+              Insufficient balance. Available:{' '}
+              {balanceState && balanceState.decryptedBalance !== null &&
+                formatTokenAmount(balanceState.decryptedBalance)}{' '}
+              c{tokenPair.erc20Symbol}
+            </span>
+          </div>
+        )}
 
         {!isFHEReady && !fheError && (
           <p className="text-center text-sm text-blue-600 dark:text-blue-400">

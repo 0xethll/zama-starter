@@ -25,7 +25,6 @@ import type { TabComponentProps } from './types'
 
 export function UnwrapTab({
   tokenPair,
-  onComplete,
 }: TabComponentProps) {
   const { address } = useAccount()
   const { isFHEReady, fheInstance, fheError } = useFHEContext()
@@ -60,14 +59,13 @@ export function UnwrapTab({
     isLoading: isUnwrapping,
     isConfirmed: isUnwrapConfirmed,
     error: unwrapError,
-    reset: resetUnwrap,
   } = useUnwrap(tokenPair.wrappedAddress || undefined)
 
   useEffect(() => {
     if (isUnwrapConfirmed) {
-      resetUnwrap()
-
       setIsPreparingUnwrap(false)
+      setUnwrapAmount('')
+
       // Clear the decrypted balance cache after unwrapping
       if (tokenPair.wrappedAddress) {
         clearBalance(tokenPair.wrappedAddress)
@@ -86,23 +84,15 @@ export function UnwrapTab({
         }
       }
       refetch()
-
-      // Final UI updates
-      setTimeout(() => {
-        onComplete?.()
-        setUnwrapAmount('')
-      }, 2000)
     } else if (unwrapError) {
       setIsPreparingUnwrap(false)
     }
   }, [
     isUnwrapConfirmed,
     unwrapError,
-    onComplete,
     tokenPair.wrappedAddress,
     clearBalance,
     refetchRequests,
-    resetUnwrap,
   ])
 
   const handleUnwrap = async () => {
@@ -226,19 +216,13 @@ export function UnwrapTab({
           </div>
 
           {/* Warning if balance not decrypted */}
-          {tokenPair.wrappedAddress && !isBalanceVisible && (
-            <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-                  Decrypt Balance First
-                </h4>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Click the eye icon on the Confidential Token balance card
-                  above to decrypt and verify your available balance before
-                  unwrapping.
-                </p>
-              </div>
+          {!isBalanceVisible && decryptionStatus.canDecrypt && unwrapAmount && (
+            <div className="flex items-center justify-center gap-2 text-center text-sm text-blue-600 dark:text-blue-400">
+              <AlertCircle className="h-4 w-4" />
+              <span>
+                Please decrypt your balance first. Click the eye icon on the
+                Confidential Token balance card above.
+              </span>
             </div>
           )}
 

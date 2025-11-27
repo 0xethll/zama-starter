@@ -92,6 +92,7 @@ export function useApproval(
     isConfirmed,
     error,
     hash,
+    reset,
   }
 }
 

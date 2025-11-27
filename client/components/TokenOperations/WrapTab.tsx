@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Shield, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { useAccount } from 'wagmi'
 import { formatUnits, parseUnits } from 'viem'
@@ -27,10 +27,6 @@ export function WrapTab({
   const [currentStep, setCurrentStep] = useState<WrapStep | null>(null)
   const [completedSteps, setCompletedSteps] = useState<WrapStep[]>([])
 
-  // Refs to track if auto-continue has been triggered (prevent duplicate calls)
-  const approvalCompletedRef = useRef(false)
-  const wrapperCreatedContinuedRef = useRef(false)
-
   // Check if wrapper needs to be created
   const needsWrapperCreation = !tokenPair.wrappedAddress
 
@@ -40,6 +36,7 @@ export function WrapTab({
     isLoading: isCreatingWrapper,
     isConfirmed: isWrapperCreated,
     error: wrapperError,
+    reset: resetWrapper
   } = useCreateWrappedToken()
 
   const { allowance, refetchAllowance } = useAllowance(
@@ -51,6 +48,7 @@ export function WrapTab({
     isLoading: isApproving,
     isConfirmed: isApprovalConfirmed,
     error: approvalError,
+    reset: resetApprove
   } = useApproval(
     tokenPair.erc20Address,
     tokenPair.wrappedAddress || undefined,
@@ -71,26 +69,23 @@ export function WrapTab({
     setCurrentStep(null)
     setCompletedSteps([])
     resetWrap()
-    wrapperCreatedContinuedRef.current = false
-    approvalCompletedRef.current = false
   }, [tokenPair.erc20Address, resetWrap])
 
-  // Handle wrapper creation completion
+  // Handle wrapper creation completion and trigger refetch
   useEffect(() => {
     if (isWrapperCreated) {
+      resetWrapper()
       setCompletedSteps((prev) => [...prev, 'create'])
       setCurrentStep(null)
-      // Wait for confirmation and refetch to get the new wrapper address
-      setTimeout(() => {
-        onComplete?.()
-        // Note: After refetch, tokenPair will update and trigger auto-continue effect
-      }, 2000)
-    }
-  }, [isWrapperCreated, onComplete])
 
-  // Auto-continue after wrapper is created and tokenPair updates
+      // Trigger refetch to get the new wrapper address
+      // tokenPair.wrappedAddress will update in next render
+      onComplete?.()
+    }
+  }, [isWrapperCreated, onComplete, resetWrapper])
+
+  // Auto-continue when wrapper address appears after creation
   useEffect(() => {
-    // If we just completed 'create' step and now have a wrapper address, continue automatically
     if (
       completedSteps.includes('create') &&
       !completedSteps.includes('approve') &&
@@ -98,26 +93,21 @@ export function WrapTab({
       tokenPair.wrappedAddress &&
       wrapAmount &&
       !currentStep &&
-      address &&
-      !wrapperCreatedContinuedRef.current // Prevent duplicate execution
+      address
     ) {
-      wrapperCreatedContinuedRef.current = true
-      console.log('✅ Wrapper created, auto-continuing to next step...')
+      console.log('✅ Wrapper address detected, continuing to next step...')
 
       // Check if approval is needed
       const wrapAmountWei = parseUnits(wrapAmount, tokenPair.erc20Decimals)
-      const hasInsufficientAllowance =
-        allowance !== undefined && wrapAmountWei > allowance
+      const needsApproval = allowance !== undefined && wrapAmountWei > allowance
 
-      setTimeout(() => {
-        if (hasInsufficientAllowance) {
-          setCurrentStep('approve')
-          approveTokens(wrapAmount)
-        } else {
-          setCurrentStep('wrap')
-          wrapTokens(wrapAmount)
-        }
-      }, 500)
+      if (needsApproval) {
+        setCurrentStep('approve')
+        approveTokens(wrapAmount)
+      } else {
+        setCurrentStep('wrap')
+        wrapTokens(wrapAmount)
+      }
     }
   }, [
     tokenPair.wrappedAddress,
@@ -125,55 +115,50 @@ export function WrapTab({
     wrapAmount,
     currentStep,
     address,
-    allowance, // Added
-    approveTokens, // Added
-    tokenPair.erc20Decimals, // Added
-    wrapTokens, // Added
+    tokenPair.erc20Decimals,
+    allowance,
+    approveTokens,
+    wrapTokens,
   ])
 
-  // Reset wrapper continued ref when wrapper address changes
+  // Handle approval completion and refetch allowance
   useEffect(() => {
-    wrapperCreatedContinuedRef.current = false
-  }, [tokenPair.wrappedAddress])
-
-  // Refetch allowance after approval and auto-continue to wrap
-  useEffect(() => {
-    if (isApprovalConfirmed && !approvalCompletedRef.current) {
-      approvalCompletedRef.current = true
+    if (isApprovalConfirmed) {
+      resetApprove()
       setCompletedSteps((prev) => [...prev, 'approve'])
       setCurrentStep(null)
-      refetchAllowance()
 
-      // Auto-continue to wrap step after allowance is refreshed
-      setTimeout(() => {
-        if (
-          wrapAmount &&
-          !completedSteps.includes('wrap') &&
-          !isWrapping &&
-          !currentStep
-        ) {
-          console.log('✅ Approval completed, auto-continuing to wrap...')
-          setCurrentStep('wrap')
-          wrapTokens(wrapAmount)
-        }
-      }, 1000)
+      // Refetch allowance - it will update in next render
+      refetchAllowance()
+    }
+  }, [isApprovalConfirmed, resetApprove, refetchAllowance])
+
+  // Auto-continue to wrap when allowance is sufficient after approval
+  useEffect(() => {
+    if (
+      completedSteps.includes('approve') &&
+      !completedSteps.includes('wrap') &&
+      wrapAmount &&
+      !currentStep &&
+      allowance !== undefined
+    ) {
+      const wrapAmountWei = parseUnits(wrapAmount, tokenPair.erc20Decimals)
+
+      // Check if allowance is now sufficient
+      if (allowance >= wrapAmountWei) {
+        console.log('✅ Allowance updated, auto-continuing to wrap...')
+        setCurrentStep('wrap')
+        wrapTokens(wrapAmount)
+      }
     }
   }, [
-    isApprovalConfirmed,
+    allowance,
     completedSteps,
-    isWrapping,
-    currentStep,
-    refetchAllowance,
     wrapAmount,
+    currentStep,
+    tokenPair.erc20Decimals,
     wrapTokens,
-  ]) // Remove function dependencies
-
-  // Reset approval ref when approval state changes
-  useEffect(() => {
-    if (!isApprovalConfirmed) {
-      approvalCompletedRef.current = false
-    }
-  }, [isApprovalConfirmed])
+  ])
 
   // Trigger parent refetch after successful wrap
   useEffect(() => {
@@ -195,66 +180,30 @@ export function WrapTab({
     }
   }, [isWrapConfirmed, onComplete, tokenPair.wrappedAddress, clearBalance, resetWrap])
 
-  // Handle wrapper creation error
-  useEffect(() => {
-    if (wrapperError) {
-      setCurrentStep(null)
-      // Don't clear completedSteps - keep track of what was done
-      wrapperCreatedContinuedRef.current = false
-    }
-  }, [wrapperError])
-
-  // Handle approval error - auto-clear after delay to allow retry
-  useEffect(() => {
-    if (approvalError) {
-      setCurrentStep(null)
-      approvalCompletedRef.current = false
-    }
-  }, [approvalError])
-
-  // Handle wrap error - auto-clear after delay to allow retry
-  useEffect(() => {
-    if (wrapError) {
-      setCurrentStep(null)
-
-      // Auto-clear error after 3 seconds to allow retry
-      const timer = setTimeout(() => {
-        resetWrap()
-      }, 3000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [wrapError, resetWrap])
-
-  // Handle unified wrap action
-  const handleWrapAction = async () => {
+  // Handle unified wrap action - simply initiate the appropriate step
+  const handleWrapAction = () => {
     if (!wrapAmount || !address) return
 
-    try {
-      // Step 1: Create wrapper if needed
-      if (needsWrapperCreation) {
-        setCurrentStep('create')
-        await createWrapper(tokenPair.erc20Address)
-        return // Wait for wrapper creation to complete
-      }
-
-      // Step 2: Approve if needed
-      const wrapAmountWei = parseUnits(wrapAmount, tokenPair.erc20Decimals)
-      const hasInsufficientAllowance =
-        allowance !== undefined && wrapAmountWei > allowance
-      if (hasInsufficientAllowance) {
-        setCurrentStep('approve')
-        await approveTokens(wrapAmount)
-        return // Wait for approval to complete
-      }
-
-      // Step 3: Wrap
-      setCurrentStep('wrap')
-      await wrapTokens(wrapAmount)
-    } catch (error) {
-      console.error('Wrap action error:', error)
-      setCurrentStep(null)
+    // Step 1: Create wrapper if needed
+    if (!tokenPair.wrappedAddress) {
+      setCurrentStep('create')
+      createWrapper(tokenPair.erc20Address)
+      return
     }
+
+    // Step 2: Approve if needed
+    const wrapAmountWei = parseUnits(wrapAmount, tokenPair.erc20Decimals)
+    const needsApproval = allowance !== undefined && wrapAmountWei > allowance
+
+    if (needsApproval) {
+      setCurrentStep('approve')
+      approveTokens(wrapAmount)
+      return
+    }
+
+    // Step 3: Wrap
+    setCurrentStep('wrap')
+    wrapTokens(wrapAmount)
   }
 
   const maxWrapAmount = formatUnits(

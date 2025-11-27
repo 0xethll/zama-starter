@@ -15,7 +15,7 @@ interface TokenBalanceCardsProps {
 }
 
 export function TokenBalanceCards({ tokenPair }: TokenBalanceCardsProps) {
-  const { getBalanceState, fetchAndDecrypt, getDecryptionRequirements } = useConfidentialBalance()
+  const { getBalanceState, fetchAndDecrypt, getDecryptionRequirements, clearBalance } = useConfidentialBalance()
   const sidebar = useSidebar()
 
   const erc20Balance = formatUnits(
@@ -42,8 +42,8 @@ export function TokenBalanceCards({ tokenPair }: TokenBalanceCardsProps) {
     if (!tokenPair.wrappedAddress) return
 
     if (isBalanceVisible) {
-      // Hide: do nothing, just let it show masked
-      // We don't clear the balance here to allow quick re-show
+      // Hide: clear the decrypted balance
+      clearBalance(tokenPair.wrappedAddress)
     } else {
       // Show: fetch and decrypt
       await fetchAndDecrypt(tokenPair.wrappedAddress)

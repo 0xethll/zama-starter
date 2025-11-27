@@ -105,12 +105,16 @@ export function FHEProvider({ children }: FHEProviderProps) {
     const [signer, setSigner] = useState<Signer | null>(null)
 
     const [fheError, setFheError] = useState<string | null>(globalError)
+    const [isInitialized, setIsInitialized] = useState<boolean>(
+        globalIsInitialized,
+    )
     const isMountedRef = useRef(true)
 
-    // Update FHE error state when global state changes
+    // Update FHE state when global state changes
     const updateFHEState = useCallback(() => {
         if (!isMountedRef.current) return
         setFheError(globalError)
+        setIsInitialized(globalIsInitialized)
     }, [])
 
     // Initialize FHE with singleton pattern (delayed to allow other effects to run first)
@@ -154,6 +158,28 @@ export function FHEProvider({ children }: FHEProviderProps) {
         }
     }, [updateFHEState])
 
+    // Initialize FHE with singleton pattern
+    // useEffect(() => {
+    //     isMountedRef.current = true
+
+    //     // Subscribe to global FHE state changes
+    //     stateChangeListeners.add(updateFHEState)
+
+    //     // Initialize if not already done
+    //     if (!globalIsInitialized && !globalInitPromise && !globalError) {
+    //         initializeFHESingleton().catch(() => {
+    //             // Error already handled in initializeFHESingleton
+    //         })
+    //     } else {
+    //         updateFHEState()
+    //     }
+
+    //     return () => {
+    //         isMountedRef.current = false
+    //         stateChangeListeners.delete(updateFHEState)
+    //     }
+    // }, [updateFHEState])
+
     const retryFHE = useCallback(() => {
         if (!isMountedRef.current) return
 
@@ -164,6 +190,7 @@ export function FHEProvider({ children }: FHEProviderProps) {
         globalError = null
 
         setFheError(null)
+        setIsInitialized(false)
 
         initializeFHESingleton().catch(() => {
             // Error already handled in initializeFHESingleton
@@ -196,7 +223,7 @@ export function FHEProvider({ children }: FHEProviderProps) {
     }, [config, address])
 
     const contextValue: FHEContextType = {
-        isFHEReady: globalIsInitialized && !!globalFheInstance && !fheError,
+        isFHEReady: isInitialized && !!globalFheInstance && !fheError,
         fheInstance: globalFheInstance,
         fheError,
         retryFHE,
