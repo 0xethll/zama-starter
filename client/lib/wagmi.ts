@@ -10,15 +10,14 @@ export const config = createConfig(
   getDefaultConfig({
     walletConnectProjectId,
 
-    appName: 'Zama Starter',
+    appName: 'Z-Payment',
     appDescription:
-      'Explore Zama FHE with Confidential USD transfers and swaps',
-    appUrl: 'https://zama-starter.vercel.app',
-    appIcon: 'https://zama-starter.vercel.app/favicon.ico', // your app's icon, no bigger than 1024x1024px (max. 1MB)
+      'Private payments for any ERC20 token powered by Zama FHE',
+    appUrl: 'https://z-payment.vercel.app/',
+    appIcon: 'https://z-payment.vercel.app/favicon.ico',
 
     chains: [sepolia],
     transports: {
-      // RPC URL for each chain with fallback
       [sepolia.id]: fallback([
         http(infuraRpcURL),
         http('https://ethereum-sepolia-rpc.publicnode.com'),

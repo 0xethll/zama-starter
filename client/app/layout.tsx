@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zama Learning Platform",
-  description: "Learn Zama FHE with Confidential USD transfers and swaps",
+  title: "Z-Payment - Private ERC20 Payments",
+  description: "Private payments for any ERC20 token powered by Zama FHE",
 };
 
 export default function RootLayout({

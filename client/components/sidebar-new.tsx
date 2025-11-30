@@ -66,7 +66,7 @@ export function Sidebar() {
                 </motion.div>
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-transparent bg-clip-text">
-                    Zama Starter
+                    Z-Payment
                   </h1>
                   <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                     <Sparkles className="h-3 w-3" />

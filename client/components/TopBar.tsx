@@ -51,7 +51,7 @@ export function TopBar() {
               </motion.div>
               <div className="hidden sm:block">
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-transparent bg-clip-text">
-                  Zama Starter
+                  Z-Payment
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   FHE Explorer
