@@ -15,11 +15,6 @@ export function TechnologyStack() {
           description: 'Fully Homomorphic Encryption for Ethereum',
           features: ['Encrypted computations', 'On-chain privacy', 'EVM compatible'],
         },
-        {
-          name: 'TFHE-rs',
-          description: 'Core cryptographic library',
-          features: ['Fast FHE operations', 'Rust implementation', 'Production-ready'],
-        },
       ],
     },
     {
@@ -50,7 +45,7 @@ export function TechnologyStack() {
           features: ['Server components', 'Optimized builds', 'TypeScript support'],
         },
         {
-          name: 'fhevmjs',
+          name: 'Relayer SDK',
           description: 'FHE client library',
           features: ['Key generation', 'Encryption', 'Proof creation'],
         },
@@ -194,7 +189,7 @@ export function TechnologyStack() {
           <div className="flex flex-wrap items-center justify-center gap-6">
             {[
               '🌐 Frontend (Next.js)',
-              '🔐 fhevmjs',
+              '🔐 Relayer SDK',
               '💼 Wallet',
               '⛓️ Smart Contracts',
               '🔒 Zama fhEVM',
